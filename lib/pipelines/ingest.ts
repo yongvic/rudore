@@ -6,6 +6,7 @@ import { sourceProviderMap } from "@/lib/pipelines/providers";
 type IngestInput = {
   sourceId?: string;
   startupId?: string | null;
+  startupSlug?: string;
 };
 
 const insightTypeBySource: Record<string, "MARKET" | "COMPETITOR" | "TREND" | "OPPORTUNITY"> = {
@@ -23,10 +24,15 @@ export async function runIngestion(input: IngestInput = {}) {
 
   const startups = await prisma.startup.findMany({
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true },
   });
 
-  const fallbackStartupId = input.startupId ?? startups[0]?.id ?? null;
+  const selectedStartup =
+    input.startupSlug
+      ? startups.find((startup) => startup.slug === input.startupSlug)
+      : undefined;
+  const fallbackStartupId =
+    input.startupId ?? selectedStartup?.id ?? startups[0]?.id ?? null;
   const results = {
     sources: sources.length,
     jobs: 0,

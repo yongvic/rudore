@@ -6,6 +6,7 @@ export async function POST(request: Request) {
   const result = await runIngestion({
     sourceId: payload.sourceId,
     startupId: payload.startupId ?? null,
+    startupSlug: payload.startupSlug,
   });
 
   return Response.json({ status: "ok", result });

@@ -11,17 +11,42 @@ export async function fetchRss(url: string) {
   }
 
   const xml = await response.text();
+  const rssItems = parseItems(xml, "item", (entry) => {
+    const title = extractTag(entry, "title");
+    const link = extractTag(entry, "link");
+    const description = extractTag(entry, "description");
+    return title && link ? { title, link, description } : null;
+  });
+
+  if (rssItems.length > 0) {
+    return rssItems;
+  }
+
+  const atomItems = parseItems(xml, "entry", (entry) => {
+    const title = extractTag(entry, "title");
+    const link = extractAttr(entry, "link", "href") || extractTag(entry, "link");
+    const description =
+      extractTag(entry, "summary") || extractTag(entry, "content");
+    return title && link ? { title, link, description } : null;
+  });
+
+  return atomItems;
+}
+
+function parseItems(
+  xml: string,
+  tag: string,
+  builder: (entry: string) => RssItem | null
+) {
   const items: RssItem[] = [];
-  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  const itemRegex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "gi");
   let match: RegExpExecArray | null;
 
   while ((match = itemRegex.exec(xml))) {
-    const itemXml = match[1];
-    const title = extractTag(itemXml, "title");
-    const link = extractTag(itemXml, "link");
-    const description = extractTag(itemXml, "description");
-    if (title && link) {
-      items.push({ title, link, description });
+    const entry = match[1];
+    const item = builder(entry);
+    if (item) {
+      items.push(item);
     }
   }
 
@@ -32,4 +57,10 @@ function extractTag(xml: string, tag: string) {
   const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i");
   const match = xml.match(regex);
   return match?.[1]?.replace(/<!\\[CDATA\\[|\\]\\]>/g, "").trim() ?? "";
+}
+
+function extractAttr(xml: string, tag: string, attr: string) {
+  const regex = new RegExp(`<${tag}[^>]*${attr}=\"([^\"]+)\"[^>]*>`, "i");
+  const match = xml.match(regex);
+  return match?.[1]?.trim() ?? "";
 }
