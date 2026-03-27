@@ -1,0 +1,336 @@
+﻿// Rudore OS data model
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  LEAD
+  ANALYST
+  VIEWER
+}
+
+enum StartupStage {
+  IDEA
+  MVP
+  TRACTION
+  SCALE
+}
+
+enum ScrapeStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum InsightType {
+  MARKET
+  COMPETITOR
+  TREND
+  RISK
+  OPPORTUNITY
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  timezone  String
+  region    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      WorkspaceUser[]
+  startups   Startup[]
+  sources    DataSource[]
+  automations AutomationWorkflow[]
+  ecosystemNodes EcosystemNode[]
+  aiRuns     AiRun[]
+
+  @@index([region])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaces WorkspaceUser[]
+  memberships StartupMember[]
+}
+
+model WorkspaceUser {
+  id          String   @id @default(cuid())
+  role        Role
+  workspaceId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+}
+
+model Startup {
+  id          String       @id @default(cuid())
+  workspaceId String
+  name        String
+  slug        String
+  description String?
+  stage       StartupStage
+  sector      String
+  hqCountry   String
+  focus       String?
+  tags        String[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id])
+  members     StartupMember[]
+  metrics     Metric[]
+  activities  ActivityEvent[]
+  insights    Insight[]
+  alerts      Alert[]
+  recos       Recommendation[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+}
+
+model StartupMember {
+  id        String @id @default(cuid())
+  role      Role
+  startupId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  startup Startup @relation(fields: [startupId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([startupId, userId])
+  @@index([startupId])
+}
+
+model Metric {
+  id        String   @id @default(cuid())
+  startupId String
+  name      String
+  value     Float
+  unit      String
+  period    String
+  createdAt DateTime @default(now())
+
+  startup Startup @relation(fields: [startupId], references: [id])
+
+  @@index([startupId])
+}
+
+model ActivityEvent {
+  id         String   @id @default(cuid())
+  startupId  String
+  title      String
+  detail     String?
+  type       String
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  startup Startup @relation(fields: [startupId], references: [id])
+
+  @@index([startupId])
+}
+
+model DataSource {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  url         String
+  type        String
+  reliability Float
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  jobs      ScrapeJob[]
+
+  @@index([workspaceId])
+}
+
+model ScrapeJob {
+  id          String       @id @default(cuid())
+  sourceId    String
+  status      ScrapeStatus
+  scheduledAt DateTime
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  error       String?
+
+  source    DataSource   @relation(fields: [sourceId], references: [id])
+  documents RawDocument[]
+
+  @@index([sourceId])
+}
+
+model RawDocument {
+  id        String   @id @default(cuid())
+  jobId     String
+  url       String
+  title     String?
+  content   String
+  lang      String
+  hash      String
+  createdAt DateTime @default(now())
+
+  job      ScrapeJob  @relation(fields: [jobId], references: [id])
+  insights Insight[]
+
+  @@index([jobId])
+  @@index([hash])
+}
+
+model Insight {
+  id         String      @id @default(cuid())
+  startupId  String?
+  documentId String?
+  type       InsightType
+  title      String
+  summary    String
+  confidence Float
+  createdAt  DateTime @default(now())
+
+  startup  Startup?     @relation(fields: [startupId], references: [id])
+  document RawDocument? @relation(fields: [documentId], references: [id])
+  alerts   Alert[]
+  recos    Recommendation[]
+
+  @@index([startupId])
+}
+
+model Alert {
+  id        String        @id @default(cuid())
+  startupId String?
+  insightId String?
+  title     String
+  severity  AlertSeverity
+  status    AlertStatus
+  createdAt DateTime @default(now())
+
+  startup Startup? @relation(fields: [startupId], references: [id])
+  insight Insight? @relation(fields: [insightId], references: [id])
+
+  @@index([startupId])
+  @@index([status])
+}
+
+model Recommendation {
+  id        String   @id @default(cuid())
+  startupId String
+  insightId String?
+  title     String
+  rationale String
+  action    String
+  createdAt DateTime @default(now())
+
+  startup Startup @relation(fields: [startupId], references: [id])
+  insight Insight? @relation(fields: [insightId], references: [id])
+
+  @@index([startupId])
+}
+
+model AutomationWorkflow {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  enabled     Boolean  @default(false)
+  trigger     Json
+  actions     Json
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  runs      WorkflowRun[]
+
+  @@index([workspaceId])
+}
+
+model WorkflowRun {
+  id         String   @id @default(cuid())
+  workflowId String
+  status     String
+  startedAt  DateTime
+  finishedAt DateTime?
+  log        Json?
+
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id])
+
+  @@index([workflowId])
+}
+
+model EcosystemNode {
+  id          String   @id @default(cuid())
+  workspaceId String
+  type        String
+  label       String
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  edgesFrom EcosystemEdge[] @relation("EdgeFrom")
+  edgesTo   EcosystemEdge[] @relation("EdgeTo")
+
+  @@index([workspaceId])
+}
+
+model EcosystemEdge {
+  id         String   @id @default(cuid())
+  workspaceId String
+  fromId     String
+  toId       String
+  kind       String
+  strength   Float
+  createdAt  DateTime @default(now())
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id])
+  from      EcosystemNode  @relation("EdgeFrom", fields: [fromId], references: [id])
+  to        EcosystemNode  @relation("EdgeTo", fields: [toId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model AiRun {
+  id          String   @id @default(cuid())
+  workspaceId String
+  model       String
+  prompt      String
+  response    String
+  tokensIn    Int
+  tokensOut   Int
+  costUsd     Float
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+}

@@ -1,0 +1,176 @@
+export type DashboardKpi = {
+  label: string;
+  value: string;
+  delta: string;
+};
+
+export type DashboardAlert = {
+  title: string;
+  detail: string;
+  tone: "warning" | "danger" | "info";
+  label: string;
+};
+
+export type DashboardInsight = {
+  title: string;
+  summary: string;
+  confidence: string;
+};
+
+export type DashboardWatchItem = {
+  name: string;
+  note: string;
+  status: string;
+};
+
+export type DashboardMarketSignal = {
+  title: string;
+  summary: string;
+  tag: string;
+};
+
+export type DashboardExecution = {
+  title: string;
+  detail: string;
+  status: string;
+  tone: "success" | "warning" | "info";
+};
+
+export type DashboardResponse = {
+  kpis: DashboardKpi[];
+  alerts: DashboardAlert[];
+  insights: DashboardInsight[];
+  watchlist: DashboardWatchItem[];
+  marketSignals: DashboardMarketSignal[];
+  execution: DashboardExecution[];
+};
+
+export type StartupHealth = {
+  tone: "warning" | "success" | "info" | "danger";
+  label: string;
+};
+
+export type StartupListItem = {
+  id: string;
+  name: string;
+  sector: string;
+  stage: string;
+  focus: string;
+  health: StartupHealth;
+};
+
+export type StartupsResponse = {
+  startups: StartupListItem[];
+};
+
+export type StartupMetric = {
+  label: string;
+  value: string;
+  delta: string;
+};
+
+export type StartupTimelineItem = {
+  title: string;
+  date: string;
+  detail: string;
+};
+
+export type StartupRecommendation = {
+  title: string;
+  detail: string;
+};
+
+export type StartupIntelligenceItem = {
+  title: string;
+  detail: string;
+  tag: string;
+};
+
+export type StartupDetailResponse = {
+  name: string;
+  sector: string;
+  stage: string;
+  description: string;
+  metrics: StartupMetric[];
+  timeline: StartupTimelineItem[];
+  recommendations: StartupRecommendation[];
+  intelligence: StartupIntelligenceItem[];
+};
+
+export type IntelligenceFilter = {
+  label: string;
+  active?: boolean;
+};
+
+export type IntelligenceFeedItem = {
+  title: string;
+  summary: string;
+  source: string;
+  score: string;
+  tag: string;
+};
+
+export type IntelligenceResponse = {
+  feed: IntelligenceFeedItem[];
+  filters: IntelligenceFilter[];
+};
+
+export type AssistantMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AssistantContextItem = {
+  label: string;
+  value: string;
+};
+
+export type AssistantResponse = {
+  conversation: AssistantMessage[];
+  context: AssistantContextItem[];
+  suggestions: string[];
+};
+
+export type AutomationWorkflowItem = {
+  name: string;
+  trigger: string;
+  action: string;
+  status: string;
+};
+
+export type AutomationHistoryItem = {
+  title: string;
+  detail: string;
+  time: string;
+};
+
+export type AutomationsResponse = {
+  workflows: AutomationWorkflowItem[];
+  history: AutomationHistoryItem[];
+};
+
+export type EcosystemNodeItem = {
+  id: string;
+  label: string;
+  x: string;
+  y: string;
+};
+
+export type EcosystemRelationItem = {
+  title: string;
+  detail: string;
+};
+
+export type EcosystemResponse = {
+  nodes: EcosystemNodeItem[];
+  relations: EcosystemRelationItem[];
+};
+
+export type SettingsItem = {
+  title: string;
+  detail: string;
+};
+
+export type SettingsResponse = {
+  settings: SettingsItem[];
+};
