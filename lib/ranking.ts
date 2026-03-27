@@ -5,6 +5,12 @@ const severityWeight = {
   CRITICAL: 0.95,
 };
 
+const typeBoost: Record<string, number> = {
+  RISK: 0.12,
+  MARKET: 0.08,
+  COMPETITOR: 0.08,
+};
+
 function clamp(value: number) {
   return Math.max(0.1, Math.min(0.95, value));
 }
@@ -17,12 +23,13 @@ function recencyScore(date: Date, windowDays = 14) {
 export function scoreAlert(alert: {
   severity: keyof typeof severityWeight | string;
   createdAt: Date;
-  insight?: { priorityScore?: number | null } | null;
+  insight?: { priorityScore?: number | null; type?: string | null } | null;
 }) {
   const severity = severityWeight[alert.severity as keyof typeof severityWeight] ?? 0.5;
   const priority = alert.insight?.priorityScore ?? 0.5;
+  const boost = alert.insight?.type ? typeBoost[alert.insight.type] ?? 0 : 0;
   const recency = recencyScore(alert.createdAt);
-  return clamp(severity * 0.5 + priority * 0.3 + recency * 0.2);
+  return clamp(severity * 0.5 + priority * 0.3 + recency * 0.2 + boost);
 }
 
 export function scoreRecommendation(reco: {

@@ -55,6 +55,14 @@ function countHits(text: string, keywords: string[]) {
   return keywords.reduce((acc, keyword) => acc + (text.includes(keyword) ? 1 : 0), 0);
 }
 
+const sectorKeywordBoosts: Record<string, string[]> = {
+  "Commerce intelligent": ["ecommerce", "paiement", "livraison", "retention", "marketplace"],
+  "Manufacturing rapide": ["usine", "industrie", "capacité", "supply", "production"],
+  "Santé digitale": ["santé", "clinique", "hôpital", "télémédecine", "patient"],
+  "Productivité RH": ["rh", "paie", "recrutement", "conformité", "talent"],
+  Logistique: ["logistique", "route", "tracking", "livraison", "hub"],
+};
+
 function computeAffinity(text: string, startup?: { name: string; sector: string; tags: string[] }) {
   if (!startup) return 0;
   const tokens = new Set(
@@ -71,7 +79,10 @@ function computeAffinity(text: string, startup?: { name: string; sector: string;
     }
   }
 
-  return Math.min(0.3, hits * 0.05);
+  const sectorBoosts = sectorKeywordBoosts[startup.sector] ?? [];
+  const sectorHits = countHits(text, sectorBoosts);
+
+  return Math.min(0.3, hits * 0.05 + sectorHits * 0.04);
 }
 
 function computeScores({
