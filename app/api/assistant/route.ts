@@ -9,7 +9,7 @@ export async function GET() {
     prisma.dataSource.count(),
   ]);
 
-  const conversation = aiRuns.flatMap((run) => [
+  const conversation = [...aiRuns].reverse().flatMap((run) => [
     { role: "user" as const, content: run.prompt },
     { role: "assistant" as const, content: run.response },
   ]);

@@ -1,4 +1,4 @@
-import { TopBar } from "@/components/layout/top-bar";
+﻿import { TopBar } from "@/components/layout/top-bar";
 import { Badge } from "@/components/ui/badge";
 import { apiGet } from "@/lib/api";
 import type { EcosystemResponse } from "@/lib/api-types";
@@ -74,3 +74,4 @@ export default async function EcosystemPage() {
     </div>
   );
 }
+

@@ -1,7 +1,9 @@
-﻿// Rudore OS data model
+// Rudore OS data model
 
 generator client {
   provider = "prisma-client-js"
+  engineType = "binary"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -66,6 +68,7 @@ model Workspace {
   sources    DataSource[]
   automations AutomationWorkflow[]
   ecosystemNodes EcosystemNode[]
+  ecosystemEdges EcosystemEdge[]
   aiRuns     AiRun[]
 
   @@index([region])
