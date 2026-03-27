@@ -132,21 +132,52 @@ export type AssistantResponse = {
 };
 
 export type AutomationWorkflowItem = {
+  id?: string;
   name: string;
   trigger: string;
   action: string;
   status: string;
+  lastRun?: string;
 };
 
 export type AutomationHistoryItem = {
+  id?: string;
   title: string;
   detail: string;
   time: string;
+  status?: string;
+  durationMs?: number | null;
+  error?: string | null;
 };
 
 export type AutomationsResponse = {
   workflows: AutomationWorkflowItem[];
   history: AutomationHistoryItem[];
+};
+
+export type AutomationTrigger = {
+  id: string;
+  type: string;
+  config: Record<string, unknown>;
+  order: number;
+};
+
+export type AutomationAction = {
+  id: string;
+  type: string;
+  config: Record<string, unknown>;
+  order: number;
+};
+
+export type AutomationWorkflowDetail = {
+  id: string;
+  name: string;
+  description: string | null;
+  enabled: boolean;
+  triggers: AutomationTrigger[];
+  actions: AutomationAction[];
+  lastRunAt: string | null;
+  nextRunAt: string | null;
 };
 
 export type EcosystemNodeItem = {

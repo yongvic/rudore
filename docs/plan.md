@@ -1,7 +1,7 @@
 # Plan d’action Rudore OS
 
 ## Avancement (estimation)
-- Global: 55% (Phases 0–2 terminées, Phase 3 en préparation)
+- Global: 70% (Phases 0–3 terminées, Phase 4 en préparation)
 
 ## Phase 0 — Socle produit (fait)
 - Design system validé (dark/light, palette, typo, principes UX)
@@ -32,10 +32,11 @@
 - Gouvernance IA (config DB + UI + API `/api/settings/ai`)
  
 
-## Phase 3 — Automations avancées (à faire)
-- Builder minimal (triggers + actions)
-- Logs d’exécution détaillés
-- Règles d’escalade et seuils dynamiques
+## Phase 3 — Automations avancées (fait)
+- Builder minimal (triggers + actions) + écran dédié
+- CRUD workflows + déclenchement manuel
+- Runner d’exécution + logs détaillés
+- Règles d’escalade (action dédiée) + schedule hebdo
 
 ## Phase 4 — Ecosystem Graph (à faire)
 - Graphe dynamique + édition des relations

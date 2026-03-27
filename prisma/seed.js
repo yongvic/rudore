@@ -88,6 +88,8 @@ async function main() {
 
   if (reset) {
     await safeDelete(() => prisma.workflowRun.deleteMany());
+    await safeDelete(() => prisma.automationAction.deleteMany());
+    await safeDelete(() => prisma.automationTrigger.deleteMany());
     await safeDelete(() => prisma.automationWorkflow.deleteMany());
     await safeDelete(() => prisma.alert.deleteMany());
     await safeDelete(() => prisma.recommendation.deleteMany());
@@ -623,6 +625,8 @@ async function main() {
       enabled: true,
       trigger: { label: "Tous les lundis, 07:00", type: "schedule" },
       actions: { label: "Synthèse + envoi aux leads", type: "email" },
+      description: "Synthèse hebdomadaire des signaux et KPIs.",
+      lastRunAt: new Date("2026-03-27T07:13:00Z"),
     },
   });
 
@@ -633,6 +637,8 @@ async function main() {
       enabled: true,
       trigger: { label: "Nouveau signal détecté", type: "event" },
       actions: { label: "Notification + résumé", type: "alert" },
+      description: "Alerte rapide sur signaux concurrents.",
+      lastRunAt: new Date("2026-03-26T18:05:00Z"),
     },
   });
 
@@ -643,7 +649,60 @@ async function main() {
       enabled: false,
       trigger: { label: "Variation > 15%", type: "threshold" },
       actions: { label: "Escalade + recommandation", type: "escalation" },
+      description: "Escalade automatique en cas de dérive KPI.",
     },
+  });
+
+  await prisma.automationTrigger.createMany({
+    data: [
+      {
+        workflowId: workflowBrief.id,
+        type: "schedule.weekly",
+        config: { day: "Lundi", time: "07:00" },
+        order: 0,
+      },
+      {
+        workflowId: workflowWatch.id,
+        type: "insight.created",
+        config: { insightTypes: ["COMPETITOR", "MARKET"] },
+        order: 0,
+      },
+      {
+        workflowId: workflowAlert.id,
+        type: "metric.threshold",
+        config: { metric: "MRR", operator: "<", value: 80000 },
+        order: 0,
+      },
+    ],
+  });
+
+  await prisma.automationAction.createMany({
+    data: [
+      {
+        workflowId: workflowBrief.id,
+        type: "create.brief",
+        config: { template: "Synthèse exécution", owner: "Ops" },
+        order: 0,
+      },
+      {
+        workflowId: workflowBrief.id,
+        type: "notify.slack",
+        config: { channel: "#leads", messageTemplate: "Brief hebdo prêt." },
+        order: 1,
+      },
+      {
+        workflowId: workflowWatch.id,
+        type: "notify.slack",
+        config: { channel: "#intel", messageTemplate: "Signal concurrent détecté." },
+        order: 0,
+      },
+      {
+        workflowId: workflowAlert.id,
+        type: "escalate.alert",
+        config: { to: "Managing Partner", channel: "Email" },
+        order: 0,
+      },
+    ],
   });
 
   await prisma.workflowRun.createMany({
@@ -653,6 +712,8 @@ async function main() {
         status: "SUCCESS",
         startedAt: new Date("2026-03-27T07:12:00Z"),
         finishedAt: new Date("2026-03-27T07:13:00Z"),
+        durationMs: 60000,
+        triggeredBy: "schedule",
         log: { title: "Brief hebdo envoyé", detail: "5 destinataires, 0 erreurs" },
       },
       {
@@ -660,6 +721,8 @@ async function main() {
         status: "SUCCESS",
         startedAt: new Date("2026-03-26T18:04:00Z"),
         finishedAt: new Date("2026-03-26T18:05:00Z"),
+        durationMs: 42000,
+        triggeredBy: "event",
         log: {
           title: "Alerte concurrent SpeedMaker",
           detail: "Insight classé priorité élevée",
@@ -669,6 +732,7 @@ async function main() {
         workflowId: workflowAlert.id,
         status: "RUNNING",
         startedAt: new Date("2026-03-26T07:00:00Z"),
+        triggeredBy: "threshold",
         log: {
           title: "Synthèse marché générée",
           detail: "Afrique de l'Ouest, 12 sources",
