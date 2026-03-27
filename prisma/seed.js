@@ -34,6 +34,14 @@ async function main() {
     await safeDelete(() => prisma.workspace.deleteMany());
   } else {
     console.log("seed> reset disabled (set SEED_RESET=1 to wipe data)");
+    const existing = await prisma.workspace.findUnique({
+      where: { slug: "rudore-os" },
+      select: { id: true },
+    });
+    if (existing) {
+      console.log("seed> data already present, skipping");
+      return;
+    }
   }
 
   const workspace = await prisma.workspace.create({
