@@ -69,8 +69,23 @@ model Workspace {
   ecosystemNodes EcosystemNode[]
   ecosystemEdges EcosystemEdge[]
   aiRuns     AiRun[]
+  aiConfigs  AiConfig[]
 
   @@index([region])
+}
+
+model AiConfig {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
 }
 
 model User {
@@ -204,6 +219,8 @@ model RawDocument {
   title     String?
   content   String
   lang      String
+  tags      String[]
+  entities  Json?
   hash      String
   createdAt DateTime @default(now())
 

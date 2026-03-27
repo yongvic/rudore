@@ -22,6 +22,67 @@ function score(impact, urgency) {
   };
 }
 
+const defaultAiConfig = {
+  impactKeywords: [
+    "levée",
+    "financement",
+    "régulation",
+    "interdiction",
+    "taxe",
+    "sanction",
+    "fusion",
+    "acquisition",
+    "contrat",
+    "subvention",
+    "croissance",
+    "rupture",
+  ],
+  urgencyKeywords: [
+    "urgent",
+    "immédiat",
+    "bloqué",
+    "crise",
+    "amende",
+    "incident",
+    "pénurie",
+    "risque",
+    "attaque",
+    "suspension",
+    "deadline",
+  ],
+  slowdownKeywords: ["long terme", "progressif", "sur 12 mois", "horizon"],
+  sectorBoosts: {
+    "Commerce intelligent": [
+      "ecommerce",
+      "paiement",
+      "livraison",
+      "retention",
+      "marketplace",
+    ],
+    "Manufacturing rapide": [
+      "usine",
+      "industrie",
+      "capacité",
+      "supply",
+      "production",
+    ],
+    "Santé digitale": ["santé", "clinique", "hôpital", "télémédecine", "patient"],
+    "Productivité RH": [
+      "rh",
+      "paie",
+      "recrutement",
+      "conformité",
+      "talent",
+    ],
+    Logistique: ["logistique", "route", "tracking", "livraison", "hub"],
+  },
+  typeBoosts: {
+    RISK: 0.12,
+    MARKET: 0.08,
+    COMPETITOR: 0.08,
+  },
+};
+
 async function main() {
   const reset = process.env.SEED_RESET === "1";
 
@@ -34,6 +95,7 @@ async function main() {
     await safeDelete(() => prisma.rawDocument.deleteMany());
     await safeDelete(() => prisma.scrapeJob.deleteMany());
     await safeDelete(() => prisma.dataSource.deleteMany());
+    await safeDelete(() => prisma.aiConfig.deleteMany());
     await safeDelete(() => prisma.activityEvent.deleteMany());
     await safeDelete(() => prisma.metric.deleteMany());
     await safeDelete(() => prisma.startupMember.deleteMany());
@@ -94,6 +156,14 @@ async function main() {
       { workspaceId: workspace.id, userId: ops.id, role: "ADMIN" },
       { workspaceId: workspace.id, userId: founder.id, role: "VIEWER" },
     ],
+  });
+
+  await prisma.aiConfig.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "default",
+      config: defaultAiConfig,
+    },
   });
 
   const doasi = await prisma.startup.create({
@@ -366,6 +436,8 @@ async function main() {
         content:
           "Des autorités régionales préparent un renforcement des exigences de conformité pour les fintechs.",
         lang: "fr",
+        tags: ["réglementation", "financement"],
+        entities: { countries: ["Côte d'Ivoire", "Ghana"] },
         hash: "allafrica-westafrica-fintech-2026",
       },
     }),
@@ -377,6 +449,8 @@ async function main() {
         content:
           "Un projet de loi pourrait imposer l'usage des domaines nationaux pour les entreprises.",
         lang: "fr",
+        tags: ["réglementation"],
+        entities: { countries: ["Ghana"] },
         hash: "techpoint-ghana-domain-act-2026",
       },
     }),
@@ -388,6 +462,8 @@ async function main() {
         content:
           "Les investissements dans les outils de productivité et les services B2B progressent sur le trimestre.",
         lang: "fr",
+        tags: ["financement", "croissance"],
+        entities: { countries: ["Nigeria", "Sénégal"] },
         hash: "allafrica-business-b2b-2026",
       },
     }),
@@ -398,6 +474,8 @@ async function main() {
         title: "Logistique urbaine",
         content: "Les opérateurs demandent plus de tracking en temps réel.",
         lang: "fr",
+        tags: ["logistique", "industrie"],
+        entities: { countries: ["Bénin"] },
         hash: "rudore-logistics-2026",
       },
     }),

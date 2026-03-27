@@ -174,3 +174,16 @@ export type SettingsItem = {
 export type SettingsResponse = {
   settings: SettingsItem[];
 };
+
+export type AiScoringConfig = {
+  impactKeywords: string[];
+  urgencyKeywords: string[];
+  slowdownKeywords: string[];
+  sectorBoosts: Record<string, string[]>;
+  typeBoosts: Record<string, number>;
+};
+
+export type AiSettingsResponse = {
+  config: AiScoringConfig;
+  updatedAt: string | null;
+};

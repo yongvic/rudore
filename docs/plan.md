@@ -1,7 +1,7 @@
 # Plan d’action Rudore OS
 
 ## Avancement (estimation)
-- Global: 40% (Phases 0–1 terminées, Phase 2 en cours)
+- Global: 55% (Phases 0–2 terminées, Phase 3 en préparation)
 
 ## Phase 0 — Socle produit (fait)
 - Design system validé (dark/light, palette, typo, principes UX)
@@ -16,7 +16,7 @@
 - États UX robustes (empty, error, loading)
 - Navigation stable et cohérence UI → API
 
-## Phase 2 — Intelligence opérationnelle (en cours)
+## Phase 2 — Intelligence opérationnelle (fait)
 - Pipeline ingestion initial (`lib/pipelines/ingest.ts`)
 - Providers RSS + parsing minimal (`lib/pipelines/rss.ts`, `lib/pipelines/providers.ts`)
 - Support RSS/Atom + ciblage par `startupSlug`
@@ -25,14 +25,12 @@
 - Moteur de ranking (alertes + recommandations) basé sur priorité et fraîcheur
 - Pondération sectorielle & boost par type d’insight (RISK, MARKET, COMPETITOR)
 - Endpoint manuel `/api/ingest` pour déclencher l’ingestion
+- Endpoint cron sécurisé `/api/ingest/cron` pour ingestion planifiée
 - Génération d’insights/alertes/recommandations à partir des sources
 - Déduplication simple via hash
-
-## Phase 2 — Reste à faire (prochaines itérations)
-- Brancher des sources RSS réelles par type de source
-- Ajouter un scoring IA plus fin (priorité, impact, urgence)
-- Enrichir `RawDocument` (langue, tags, entités)
-- Triggers automatiques (ingestion planifiée + règles d’alerte)
+- Enrichissement `RawDocument` (langue, tags, entités)
+- Gouvernance IA (config DB + UI + API `/api/settings/ai`)
+ 
 
 ## Phase 3 — Automations avancées (à faire)
 - Builder minimal (triggers + actions)

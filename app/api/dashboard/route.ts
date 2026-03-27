@@ -6,6 +6,7 @@ import {
   formatNumber,
 } from "@/lib/formatters";
 import { scoreAlert } from "@/lib/ranking";
+import { getWorkspaceAiConfig } from "@/lib/ai-config.server";
 
 const alertTone = {
   CRITICAL: { tone: "danger", label: "Critique" },
@@ -91,8 +92,10 @@ export async function GET() {
     include: { insight: true },
   });
 
+  const aiConfig = await getWorkspaceAiConfig(startups[0]?.workspaceId ?? null);
+
   const alertItems = alerts
-    .map((alert) => ({ alert, score: scoreAlert(alert) }))
+    .map((alert) => ({ alert, score: scoreAlert(alert, aiConfig.typeBoosts) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map(({ alert }) => {

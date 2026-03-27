@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { fetchRss } from "@/lib/pipelines/rss";
 import { sourceProviderMap } from "@/lib/pipelines/providers";
+import { defaultAiConfig } from "@/lib/ai-config";
+import { getWorkspaceAiConfigs } from "@/lib/ai-config.server";
 
 type IngestInput = {
   sourceId?: string;
@@ -16,37 +18,6 @@ const insightTypeBySource: Record<string, "MARKET" | "COMPETITOR" | "TREND" | "O
   Internal: "OPPORTUNITY",
 };
 
-const impactKeywords = [
-  "levée",
-  "financement",
-  "régulation",
-  "interdiction",
-  "taxe",
-  "sanction",
-  "fusion",
-  "acquisition",
-  "contrat",
-  "subvention",
-  "croissance",
-  "rupture",
-];
-
-const urgencyKeywords = [
-  "urgent",
-  "immédiat",
-  "bloqué",
-  "crise",
-  "amende",
-  "incident",
-  "pénurie",
-  "risque",
-  "attaque",
-  "suspension",
-  "deadline",
-];
-
-const slowdownKeywords = ["long terme", "progressif", "sur 12 mois", "horizon"];
-
 function clampScore(value: number) {
   return Math.max(0.1, Math.min(0.95, value));
 }
@@ -55,15 +26,71 @@ function countHits(text: string, keywords: string[]) {
   return keywords.reduce((acc, keyword) => acc + (text.includes(keyword) ? 1 : 0), 0);
 }
 
-const sectorKeywordBoosts: Record<string, string[]> = {
-  "Commerce intelligent": ["ecommerce", "paiement", "livraison", "retention", "marketplace"],
-  "Manufacturing rapide": ["usine", "industrie", "capacité", "supply", "production"],
-  "Santé digitale": ["santé", "clinique", "hôpital", "télémédecine", "patient"],
-  "Productivité RH": ["rh", "paie", "recrutement", "conformité", "talent"],
-  Logistique: ["logistique", "route", "tracking", "livraison", "hub"],
+const countryMap: Record<string, string> = {
+  "côte d'ivoire": "Côte d'Ivoire",
+  cote: "Côte d'Ivoire",
+  nigeria: "Nigeria",
+  ghana: "Ghana",
+  bénin: "Bénin",
+  benin: "Bénin",
+  sénégal: "Sénégal",
+  senegal: "Sénégal",
+  togo: "Togo",
+  kenya: "Kenya",
+  rwanda: "Rwanda",
 };
 
-function computeAffinity(text: string, startup?: { name: string; sector: string; tags: string[] }) {
+const topicDictionary: Record<string, string[]> = {
+  réglementation: ["régulation", "loi", "conformité", "kyc", "amende"],
+  financement: ["financement", "levée", "investissement", "capital"],
+  concurrence: ["concurrent", "competition", "rival", "market share"],
+  logistique: ["logistique", "route", "tracking", "hub", "livraison"],
+  industrie: ["usine", "industrie", "production", "capacité"],
+  santé: ["santé", "clinique", "hôpital", "télémédecine"],
+  rh: ["rh", "recrutement", "paie", "talent", "conformité"],
+};
+
+function detectLanguage(text: string) {
+  const normalized = text.toLowerCase();
+  const frenchSignals = ["le", "la", "les", "des", "pour", "sur", "avec", "nouveau"];
+  const hits = countHits(normalized, frenchSignals);
+  return hits >= 2 ? "fr" : "en";
+}
+
+function extractEntities(text: string) {
+  const normalized = text.toLowerCase();
+  const countries = Object.entries(countryMap)
+    .filter(([key]) => normalized.includes(key))
+    .map(([, value]) => value);
+  return {
+    countries: Array.from(new Set(countries)),
+  };
+}
+
+function extractTags(text: string, config: typeof defaultAiConfig) {
+  const normalized = text.toLowerCase();
+  const tags = new Set<string>();
+
+  for (const [tag, keywords] of Object.entries(topicDictionary)) {
+    if (countHits(normalized, keywords) > 0) {
+      tags.add(tag);
+    }
+  }
+
+  for (const keyword of config.impactKeywords.concat(config.urgencyKeywords)) {
+    if (normalized.includes(keyword.toLowerCase())) {
+      tags.add(keyword.toLowerCase());
+    }
+  }
+
+  return Array.from(tags).slice(0, 8);
+}
+
+function computeAffinity(
+  text: string,
+  startup: { name: string; sector: string; tags: string[] } | undefined,
+  sectorBoosts: Record<string, string[]>
+) {
   if (!startup) return 0;
   const tokens = new Set(
     [startup.name, startup.sector, ...startup.tags]
@@ -79,8 +106,8 @@ function computeAffinity(text: string, startup?: { name: string; sector: string;
     }
   }
 
-  const sectorBoosts = sectorKeywordBoosts[startup.sector] ?? [];
-  const sectorHits = countHits(text, sectorBoosts);
+  const sectorBoost = sectorBoosts[startup.sector] ?? [];
+  const sectorHits = countHits(text, sectorBoost);
 
   return Math.min(0.3, hits * 0.05 + sectorHits * 0.04);
 }
@@ -90,16 +117,18 @@ function computeScores({
   type,
   reliability,
   affinity,
+  config,
 }: {
   text: string;
   type: string;
   reliability: number;
   affinity: number;
+  config: typeof defaultAiConfig;
 }) {
   const normalized = text.toLowerCase();
-  const impactHits = countHits(normalized, impactKeywords);
-  const urgencyHits = countHits(normalized, urgencyKeywords);
-  const slowdownHits = countHits(normalized, slowdownKeywords);
+  const impactHits = countHits(normalized, config.impactKeywords);
+  const urgencyHits = countHits(normalized, config.urgencyKeywords);
+  const slowdownHits = countHits(normalized, config.slowdownKeywords);
 
   let impact = 0.35 + reliability * 0.45 + Math.min(0.25, impactHits * 0.06);
   let urgency = 0.25 + reliability * 0.35 + Math.min(0.28, urgencyHits * 0.07);
@@ -137,6 +166,9 @@ export async function runIngestion(input: IngestInput = {}) {
     where: input.sourceId ? { id: input.sourceId } : {},
     orderBy: { createdAt: "asc" },
   });
+
+  const workspaceIds = [...new Set(sources.map((source) => source.workspaceId))];
+  const aiConfigs = await getWorkspaceAiConfigs(workspaceIds);
 
   const startups = await prisma.startup.findMany({
     orderBy: { createdAt: "asc" },
@@ -177,6 +209,7 @@ export async function runIngestion(input: IngestInput = {}) {
     const provider = sourceProviderMap[source.type] ?? "generic";
     let items: Array<{ title: string; link: string; description?: string }> = [];
     let content = `Ingestion initiale : ${source.name}.`;
+    const aiConfig = aiConfigs.get(source.workspaceId) ?? defaultAiConfig;
 
     if (provider === "rss") {
       try {
@@ -209,13 +242,16 @@ export async function runIngestion(input: IngestInput = {}) {
         continue;
       }
 
+      const documentText = `${item.title ?? ""} ${item.description ?? content}`;
       const document = await prisma.rawDocument.create({
         data: {
           jobId: job.id,
           url: item.link,
           title: item.title,
           content: item.description || content,
-          lang: "fr",
+          lang: detectLanguage(documentText),
+          tags: extractTags(documentText, aiConfig),
+          entities: extractEntities(documentText),
           hash,
         },
       });
@@ -225,12 +261,13 @@ export async function runIngestion(input: IngestInput = {}) {
         insightTypeBySource[source.type] ?? "OPPORTUNITY";
 
       const scoreText = `${item.title ?? ""} ${item.description ?? content}`;
-      const affinity = computeAffinity(scoreText.toLowerCase(), targetStartup);
+      const affinity = computeAffinity(scoreText.toLowerCase(), targetStartup, aiConfig.sectorBoosts);
       const scores = computeScores({
         text: scoreText,
         type: insightType,
         reliability: source.reliability,
         affinity,
+        config: aiConfig,
       });
 
       const insight = await prisma.insight.create({
@@ -248,13 +285,27 @@ export async function runIngestion(input: IngestInput = {}) {
       });
       results.insights += 1;
 
-      if (insightType === "COMPETITOR" || insightType === "MARKET") {
+      const alertSeverity =
+        scores.priority > 0.85 || scores.urgency > 0.8
+          ? "CRITICAL"
+          : scores.priority > 0.7
+            ? "HIGH"
+            : scores.priority > 0.55
+              ? "MEDIUM"
+              : "LOW";
+
+      if (
+        insightType === "COMPETITOR" ||
+        insightType === "MARKET" ||
+        insightType === "RISK" ||
+        scores.priority > 0.82
+      ) {
         await prisma.alert.create({
           data: {
             startupId: fallbackStartupId,
             insightId: insight.id,
             title: `Alerte ${source.name}`,
-            severity: "HIGH",
+            severity: alertSeverity,
             status: "OPEN",
           },
         });
