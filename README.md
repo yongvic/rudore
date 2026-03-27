@@ -1,36 +1,49 @@
-# Rudore OS
+# Rudore OS — plateforme
 
-Rudore OS est l’intelligence opérationnelle centralisée du Venture Studio panafricain. Chaque écran de l’app combine une couche IA, des données Prisma et des automatisations programmées pour guider les décisionnaires (partners, venture leads, analysts, ops, fondateurs internés) dans leurs arbitrages stratégiques.
+**Rudore OS** unifie l’intelligence, les automatismes et les synergies d’un Venture Studio panafricain (DoAsi, SpeedMaker, Miame, Koodi, LPT) en une seule interface premium. L’application est bâtie sur Next.js App Router, Prisma, Neon, Playwright/Puppeteer et des APIs LLM pour fournir des insights, des workflows, des recommandations et un graphe d’écosystème en temps réel.
 
-## Fonctionnalités déployées
-- Dashboards connectés : KPIs, alertes, watchlist, insights, signaux marché et exécution automatisée sont servis par des APIs Prisma (`/api/dashboard`, `/api/intelligence`, `/api/assistant`, `/api/automations`, `/api/ecosystem`, `/api/settings`, `/api/startups`, `/api/startups/[startupId]`).
-- Starter dataset : la base PostgreSQL Neon est seedée (workspaces, startups, metrics, activities, insights, automations, graphes, logs IA) pour reproduire le portefeuille (DoAsi, SpeedMaker, Miame, Koodi, LPT).
-- Polices & design : Bricolage Grotesque + Google Sans, surfaces tintées, aucune carte imbriquée, espaces maîtrisés.
-- Pipeline local prêt : Prisma + Seed + Automations, accessible en mode développement `npm run dev`.
+## 1. Architecture globale
+- **Frontend** : `app/(app)` contient les pages Server Components qui sollicitent `lib/api.ts` (`apiGet`) dans `TopBar` et les sections métier. Les composants UI (side-nav, badges, boutons) vivent dans `components/layout` et `components/ui`.
+- **Backend** : chaque surface a son Route Handler Prisma (`app/api/*`). Les tableaux, listes, feed IA et assistant consomment des DTO typés via `lib/api-types.ts`.
+- **Base de données** : `prisma/schema.prisma` modélise workspaces, users, startups, métriques, activités, insights, alertes, recommandations, automations, graphe, IA runs. `lib/db.ts` assure un singleton Prisma.
+- **Scraping & IA** : `prisma/seed.js` simule la pile : sources, jobs, documents, insights, alerts, recommendations, automations et IA runs. À terme, Playwright/LLM remplacera la génération statique.
+- **Automatisations** : tables `AutomationWorkflow`/`WorkflowRun` matérialisent les triggers (briefs, veille, alertes) et la timeline visible dans l’UI du moteur d’automatisation.
 
-## Installation locale
-1. `npm install` (les dépendances anglais/IA sont déjà dans `package-lock.json`).
-2. `npm exec prisma generate` — rebuild le client (Prisma 6.19.2, moteur binaire).
-3. `npm exec prisma db push` — synchronise la base Neon avec le schéma.
-4. `npm run seed` — recrée les startups, métriques, insights, automatismes et graphe.
-5. `npm run dev` — lance Next.js avec App Router.
+## 2. Couche UI & UX
+- **Design System** : fond `#141414`, surfaces `#1b1a19`/`#211f1d`, accent `#FC532A`, polices Google Sans (corps) & Bricolage Grotesque (display), espace basé sur 8 px. Pas de cartes imbriquées ; plutôt des dividers.
+- **Principes** : priorité à l’action, hiérarchie par l’espace et la typographie, automation-first (alertes, briefs, recom), robustesse (états vides/mauvais accès, texte long).
+- **Flux utilisateur** : TopBar + SideNav + pages stratégiques (dashboard, startups, intelligence, assistant, automatisations, écosystème, settings). `apiGet` fournit les données en direct via Prisma et le formatage `lib/formatters.ts`/`lib/metrics.ts`.
 
-> Si tu changes le schéma, refais `prisma generate` puis `prisma db push` avant de rerun le seed.
+## 3. APIs & données exposées
+- `GET /api/dashboard` → KPIs, alertes critiques, watchlist, insights, signaux marché, exécution automatisée.
+- `GET /api/startups` → liste des startups, focus, statut santé.
+- `GET /api/startups/[startupId]` → profil (métriques, timeline, recommandations, intelligence).
+- `GET /api/intelligence` → feed multi- sources et filtres par startup.
+- `GET /api/assistant` → mémoires IA, contexte opérationnel, suggestions.
+- `GET /api/automations` → workflows + historique.
+- `GET /api/ecosystem` → nodes + relations pour la carte réseau.
+- `GET /api/settings` → gouvernance, sources, intégrations.
 
-## Architecture rapide
-- **Frontend** : `app/(app)` contient les pages Server Components qui appellent `lib/api.ts` via `apiGet`. Les composants partagés vivent dans `components/layout` et `components/ui`.
-- **Backend** : `app/api/*` sont des Route Handlers Prisma-read only (dashboard, startups, intelligence, assistant, automations, ecosystem, settings). `lib/db.ts` distribue un client Prisma singletons.
-- **Données** : `prisma/schema.prisma` modélise workspaces, startups, métriques, activités, insights, alertes, recommandations, automations, graphes, runs IA. `prisma/seed.js` injecte les jeux de données.
-- **Automations IA** : `AutomationWorkflow` + `WorkflowRun` pilotent la timeline / alertes / briefs.
+## 4. Workflow dev
+1. `npm install`
+1. `npm exec prisma generate`
+1. `npm exec prisma db push`
+1. `npm run seed`
+1. `npm run dev`
+- **Data flow** : les Route Handlers interrogent Prisma → DTO typés → UI.
+- **Instructions Git** : tu restes sur la branche `features`, commit et push vers `origin features`, je gère la PR.
 
-## Flux de travail
-- Tu travailles toujours sur la branche `features`. Après avoir validé une feature, `git add` + `git commit`, puis `git push origin features`.
-- Je me charge du pull request. N’hésite pas à détailler les endpoints touchés, les seeds et les vérifications faites dans le message de commit.
+## 5. Tests & validation
+- Navigation manuelle : dashboard, startups, intelligence, assistant, automatisations, écosystème, settings.
+- Seed : `npm run seed` pour reproduire dataset (workspace Rudore, startups, metrics, activité, insights, automations, graphes, logs IA).
+- Prisma : `npm exec prisma generate`, `npm exec prisma db push`.
+- Vérifier que `apiGet` consomme les routes `app/api/*` sans données hardcodées.
 
-## Points à surveiller
-- Les endpoints Prisma utilisent des helpers (`lib/formatters.ts`, `lib/metrics.ts`, `lib/api-types.ts`) pour produire des données lisibles dans l’UI sans transformer la base à chaque requête.
-- Chaque page importe `apiGet` pour récupérer des données en direct. Vérifie que `apiGet` est bien utilisé et que les types `DashboardResponse`, etc. correspondent au JSON servi par la route.
+## 6. Alerte opérationnelle
+- Les seeds actuels échouent car Neon refuse les `deleteMany`/`create` (EPERM). Il faut un compte avec droits ou une stratégie de seed incrémentale.
+- Les pushes vers GitHub échouent tant que l’accès HTTPS (port 443) à `github.com/yongvic/rudore.git` reste indisponible.
 
-## Tests recommandés
-- Lancer `npm run dev` et parcourir les écrans (dashboard, startups, intelligence, assistant, automatisations, écosystème, settings) pour vérifier que les sections affichent des données.
-- Vérifier que les seeds reposent sur les mêmes données que l’API (comparaison des réponses avec `lib/api-types.ts`).
+## 7. Perspectives
+- Automatiser la collecte (Playwright/LLM) + pipeline d’analyses continues.
+- Compléter la cartographie Ecosystem avec un graphe vivant et des scores de synergie.
+- Étendre l’Assistant/IA pour inclure des simulations d’impact KPI.
