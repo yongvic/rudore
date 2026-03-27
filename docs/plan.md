@@ -20,6 +20,7 @@
 - Pipeline ingestion initial (`lib/pipelines/ingest.ts`)
 - Providers RSS + parsing minimal (`lib/pipelines/rss.ts`, `lib/pipelines/providers.ts`)
 - Support RSS/Atom + ciblage par `startupSlug`
+- `DataSource.rssUrl` pour séparer page source et flux RSS
 - Endpoint manuel `/api/ingest` pour déclencher l’ingestion
 - Génération d’insights/alertes/recommandations à partir des sources
 - Déduplication simple via hash

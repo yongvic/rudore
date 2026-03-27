@@ -293,26 +293,29 @@ async function main() {
     prisma.dataSource.create({
       data: {
         workspaceId: workspace.id,
-        name: "BCEAO",
-        url: "https://www.bceao.int",
+        name: "AllAfrica West Africa",
+        url: "https://allafrica.com/westafrica/",
+        rssUrl: "https://allafrica.com/tools/headlines/rdf/westafrica/headlines.rdf",
         type: "Regulatory",
-        reliability: 0.86,
+        reliability: 0.82,
       },
     }),
     prisma.dataSource.create({
       data: {
         workspaceId: workspace.id,
-        name: "TechPoint",
+        name: "Techpoint Africa",
         url: "https://techpoint.africa",
+        rssUrl: "https://techpoint.africa/subject/governance-policy/feed",
         type: "Media",
-        reliability: 0.74,
+        reliability: 0.76,
       },
     }),
     prisma.dataSource.create({
       data: {
         workspaceId: workspace.id,
-        name: "Google Trends",
-        url: "https://trends.google.com",
+        name: "AllAfrica Business",
+        url: "https://allafrica.com/business/",
+        rssUrl: "https://allafrica.com/tools/headlines/rdf/business/headlines.rdf",
         type: "Trends",
         reliability: 0.8,
       },
@@ -346,32 +349,34 @@ async function main() {
     prisma.rawDocument.create({
       data: {
         jobId: jobs[0].id,
-        url: "https://www.bceao.int/regulation-kyc",
-        title: "Régulation KYC 2026",
-        content: "La BCEAO prépare de nouvelles exigences KYC pour 2026.",
+        url: "https://allafrica.com/stories/202603250123.html",
+        title: "Régulation fintech en Afrique de l'Ouest",
+        content:
+          "Des autorités régionales préparent un renforcement des exigences de conformité pour les fintechs.",
         lang: "fr",
-        hash: "bceao-kyc-2026",
+        hash: "allafrica-westafrica-fintech-2026",
       },
     }),
     prisma.rawDocument.create({
       data: {
         jobId: jobs[1].id,
-        url: "https://techpoint.africa/speedmaker-competitor",
-        title: "Levée concurrent SpeedMaker",
+        url: "https://techpoint.africa/2026/03/21/ghana-domain-act/",
+        title: "Ghana veut généraliser les domaines .gh",
         content:
-          "Un acteur nigérian annonce 12M$ pour industrialiser des micro-usines.",
+          "Un projet de loi pourrait imposer l'usage des domaines nationaux pour les entreprises.",
         lang: "fr",
-        hash: "techpoint-speedmaker-competitor",
+        hash: "techpoint-ghana-domain-act-2026",
       },
     }),
     prisma.rawDocument.create({
       data: {
         jobId: jobs[2].id,
-        url: "https://trends.google.com/health",
-        title: "Tendance santé digitale",
-        content: "Les requêtes télémédecine progressent de 28% sur 3 mois.",
+        url: "https://allafrica.com/stories/202603220456.html",
+        title: "Accélération de la demande B2B en Afrique",
+        content:
+          "Les investissements dans les outils de productivité et les services B2B progressent sur le trimestre.",
         lang: "fr",
-        hash: "trends-health-2026",
+        hash: "allafrica-business-b2b-2026",
       },
     }),
     prisma.rawDocument.create({

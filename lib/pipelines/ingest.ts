@@ -61,7 +61,8 @@ export async function runIngestion(input: IngestInput = {}) {
 
     if (provider === "rss") {
       try {
-        const fetched = await fetchRss(source.url);
+        const rssUrl = source.rssUrl || source.url;
+        const fetched = await fetchRss(rssUrl);
         if (fetched.length > 0) {
           items = fetched;
           results.mode = "rss";

@@ -171,6 +171,7 @@ model DataSource {
   workspaceId String
   name        String
   url         String
+  rssUrl      String?
   type        String
   reliability Float
   createdAt   DateTime @default(now())
