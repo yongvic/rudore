@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { formatShortDate } from "@/lib/formatters";
 import { formatMetricValue } from "@/lib/metrics";
+import { scoreRecommendation } from "@/lib/ranking";
 
 const stageLabels = {
   IDEA: "Idée",
@@ -27,8 +28,8 @@ export async function GET(
     include: {
       metrics: { orderBy: { createdAt: "desc" } },
       activities: { orderBy: { occurredAt: "desc" } },
-      recos: { orderBy: { createdAt: "desc" } },
-      insights: { orderBy: { createdAt: "desc" } },
+      recos: { orderBy: { createdAt: "desc" }, include: { insight: true } },
+      insights: { orderBy: [{ priorityScore: "desc" }, { createdAt: "desc" }] },
     },
   });
 
@@ -75,10 +76,14 @@ export async function GET(
     detail: event.detail ?? "Mise à jour opérationnelle.",
   }));
 
-  const recommendations = startup.recos.slice(0, 3).map((item) => ({
-    title: item.title,
-    detail: item.rationale,
-  }));
+  const recommendations = startup.recos
+    .map((item) => ({ item, score: scoreRecommendation(item) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(({ item }) => ({
+      title: item.title,
+      detail: item.rationale,
+    }));
 
   const intelligence = startup.insights.slice(0, 3).map((item) => ({
     title: item.title,

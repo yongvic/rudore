@@ -22,6 +22,7 @@
 - Support RSS/Atom + ciblage par `startupSlug`
 - `DataSource.rssUrl` pour séparer page source et flux RSS
 - Scoring IA (impact, urgence, priorité) avec heuristiques
+- Moteur de ranking (alertes + recommandations) basé sur priorité et fraîcheur
 - Endpoint manuel `/api/ingest` pour déclencher l’ingestion
 - Génération d’insights/alertes/recommandations à partir des sources
 - Déduplication simple via hash

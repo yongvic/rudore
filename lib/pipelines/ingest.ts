@@ -55,14 +55,35 @@ function countHits(text: string, keywords: string[]) {
   return keywords.reduce((acc, keyword) => acc + (text.includes(keyword) ? 1 : 0), 0);
 }
 
+function computeAffinity(text: string, startup?: { name: string; sector: string; tags: string[] }) {
+  if (!startup) return 0;
+  const tokens = new Set(
+    [startup.name, startup.sector, ...startup.tags]
+      .flatMap((value) => value.split(/[^a-zA-Z0-9]+/))
+      .map((value) => value.toLowerCase())
+      .filter((value) => value.length >= 3)
+  );
+
+  let hits = 0;
+  for (const token of tokens) {
+    if (text.includes(token)) {
+      hits += 1;
+    }
+  }
+
+  return Math.min(0.3, hits * 0.05);
+}
+
 function computeScores({
   text,
   type,
   reliability,
+  affinity,
 }: {
   text: string;
   type: string;
   reliability: number;
+  affinity: number;
 }) {
   const normalized = text.toLowerCase();
   const impactHits = countHits(normalized, impactKeywords);
@@ -88,6 +109,11 @@ function computeScores({
     urgency -= 0.05;
   }
 
+  if (affinity > 0) {
+    impact += affinity * 0.4;
+    urgency += affinity * 0.2;
+  }
+
   impact = clampScore(impact);
   urgency = clampScore(urgency);
   const priority = clampScore(impact * 0.6 + urgency * 0.4);
@@ -103,7 +129,7 @@ export async function runIngestion(input: IngestInput = {}) {
 
   const startups = await prisma.startup.findMany({
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, sector: true, tags: true },
   });
 
   const selectedStartup =
@@ -112,6 +138,9 @@ export async function runIngestion(input: IngestInput = {}) {
       : undefined;
   const fallbackStartupId =
     input.startupId ?? selectedStartup?.id ?? startups[0]?.id ?? null;
+  const targetStartup =
+    startups.find((startup) => startup.id === fallbackStartupId) ??
+    selectedStartup;
   const results = {
     sources: sources.length,
     jobs: 0,
@@ -185,10 +214,12 @@ export async function runIngestion(input: IngestInput = {}) {
         insightTypeBySource[source.type] ?? "OPPORTUNITY";
 
       const scoreText = `${item.title ?? ""} ${item.description ?? content}`;
+      const affinity = computeAffinity(scoreText.toLowerCase(), targetStartup);
       const scores = computeScores({
         text: scoreText,
         type: insightType,
         reliability: source.reliability,
+        affinity,
       });
 
       const insight = await prisma.insight.create({

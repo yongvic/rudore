@@ -5,6 +5,7 @@ import {
   formatMonths,
   formatNumber,
 } from "@/lib/formatters";
+import { scoreAlert } from "@/lib/ranking";
 
 const alertTone = {
   CRITICAL: { tone: "danger", label: "Critique" },
@@ -87,11 +88,14 @@ export async function GET() {
   const alerts = await prisma.alert.findMany({
     where: { status: "OPEN" },
     orderBy: { createdAt: "desc" },
-    take: 3,
     include: { insight: true },
   });
 
-  const alertItems = alerts.map((alert) => {
+  const alertItems = alerts
+    .map((alert) => ({ alert, score: scoreAlert(alert) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(({ alert }) => {
     const mapping =
       alertTone[alert.severity as keyof typeof alertTone] ??
       alertTone.MEDIUM;
