@@ -23,6 +23,7 @@
 - `GET /api/automations` → workflows + historique.
 - `GET /api/ecosystem` → nodes + relations pour la carte réseau.
 - `GET /api/settings` → gouvernance, sources, intégrations.
+- `POST /api/ingest` → ingestion manuelle (ScrapeJob + RawDocument + Insight + Alert).
 
 ## 4. Workflow dev
 1. `npm install`
