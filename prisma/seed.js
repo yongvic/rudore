@@ -10,6 +10,18 @@ async function safeDelete(fn) {
   }
 }
 
+function score(impact, urgency) {
+  const clamp = (value) => Math.max(0.1, Math.min(0.95, value));
+  const impactScore = clamp(impact);
+  const urgencyScore = clamp(urgency);
+  const priorityScore = clamp(impactScore * 0.6 + urgencyScore * 0.4);
+  return {
+    impactScore,
+    urgencyScore,
+    priorityScore: Number(priorityScore.toFixed(2)),
+  };
+}
+
 async function main() {
   const reset = process.env.SEED_RESET === "1";
 
@@ -401,6 +413,7 @@ async function main() {
         summary:
           "La BCEAO prépare de nouvelles exigences KYC pour 2026. Impact potentiel sur DoAsi.",
         confidence: 0.81,
+        ...score(0.78, 0.72),
       },
     }),
     prisma.insight.create({
@@ -412,6 +425,7 @@ async function main() {
         summary:
           "Un acteur nigérian annonce 12M$ pour industrialiser des micro-usines.",
         confidence: 0.77,
+        ...score(0.74, 0.7),
       },
     }),
     prisma.insight.create({
@@ -422,6 +436,7 @@ async function main() {
         title: "Tendance santé digitale",
         summary: "Les requêtes télémédecine progressent de 28% sur 3 mois.",
         confidence: 0.84,
+        ...score(0.7, 0.56),
       },
     }),
     prisma.insight.create({
@@ -432,6 +447,7 @@ async function main() {
         title: "Logistique urbaine",
         summary: "Les opérateurs demandent plus de tracking en temps réel.",
         confidence: 0.73,
+        ...score(0.68, 0.58),
       },
     }),
     prisma.insight.create({
@@ -441,6 +457,7 @@ async function main() {
         title: "Concurrence directe",
         summary: "2 acteurs locaux préparent des offres freemium.",
         confidence: 0.78,
+        ...score(0.71, 0.74),
       },
     }),
     prisma.insight.create({
@@ -450,6 +467,7 @@ async function main() {
         title: "Demande secteur",
         summary: "Recherche 'paiement à la livraison' +18%.",
         confidence: 0.7,
+        ...score(0.64, 0.52),
       },
     }),
     prisma.insight.create({
@@ -459,6 +477,7 @@ async function main() {
         title: "Subventions Ghana",
         summary: "Programmes industriels annoncés Q3.",
         confidence: 0.69,
+        ...score(0.6, 0.5),
       },
     }),
     prisma.insight.create({
@@ -468,6 +487,7 @@ async function main() {
         title: "Tendance télémédecine",
         summary: "Hausse des requêtes en Afrique de l'Est.",
         confidence: 0.76,
+        ...score(0.66, 0.54),
       },
     }),
     prisma.insight.create({
@@ -477,6 +497,7 @@ async function main() {
         title: "Besoin conformité",
         summary: "Nouvelles obligations RH au Sénégal.",
         confidence: 0.71,
+        ...score(0.7, 0.73),
       },
     }),
     prisma.insight.create({
@@ -486,6 +507,7 @@ async function main() {
         title: "Subventions logistiques",
         summary: "Appels d'offres publics Q2.",
         confidence: 0.74,
+        ...score(0.62, 0.55),
       },
     }),
   ]);

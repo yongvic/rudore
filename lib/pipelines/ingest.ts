@@ -16,6 +16,85 @@ const insightTypeBySource: Record<string, "MARKET" | "COMPETITOR" | "TREND" | "O
   Internal: "OPPORTUNITY",
 };
 
+const impactKeywords = [
+  "levée",
+  "financement",
+  "régulation",
+  "interdiction",
+  "taxe",
+  "sanction",
+  "fusion",
+  "acquisition",
+  "contrat",
+  "subvention",
+  "croissance",
+  "rupture",
+];
+
+const urgencyKeywords = [
+  "urgent",
+  "immédiat",
+  "bloqué",
+  "crise",
+  "amende",
+  "incident",
+  "pénurie",
+  "risque",
+  "attaque",
+  "suspension",
+  "deadline",
+];
+
+const slowdownKeywords = ["long terme", "progressif", "sur 12 mois", "horizon"];
+
+function clampScore(value: number) {
+  return Math.max(0.1, Math.min(0.95, value));
+}
+
+function countHits(text: string, keywords: string[]) {
+  return keywords.reduce((acc, keyword) => acc + (text.includes(keyword) ? 1 : 0), 0);
+}
+
+function computeScores({
+  text,
+  type,
+  reliability,
+}: {
+  text: string;
+  type: string;
+  reliability: number;
+}) {
+  const normalized = text.toLowerCase();
+  const impactHits = countHits(normalized, impactKeywords);
+  const urgencyHits = countHits(normalized, urgencyKeywords);
+  const slowdownHits = countHits(normalized, slowdownKeywords);
+
+  let impact = 0.35 + reliability * 0.45 + Math.min(0.25, impactHits * 0.06);
+  let urgency = 0.25 + reliability * 0.35 + Math.min(0.28, urgencyHits * 0.07);
+
+  if (type === "MARKET" || type === "COMPETITOR") {
+    impact += 0.06;
+    urgency += 0.05;
+  }
+  if (type === "RISK") {
+    impact += 0.04;
+    urgency += 0.08;
+  }
+  if (type === "TREND") {
+    urgency -= 0.04;
+  }
+
+  if (slowdownHits > 0) {
+    urgency -= 0.05;
+  }
+
+  impact = clampScore(impact);
+  urgency = clampScore(urgency);
+  const priority = clampScore(impact * 0.6 + urgency * 0.4);
+
+  return { impact, urgency, priority };
+}
+
 export async function runIngestion(input: IngestInput = {}) {
   const sources = await prisma.dataSource.findMany({
     where: input.sourceId ? { id: input.sourceId } : {},
@@ -105,6 +184,13 @@ export async function runIngestion(input: IngestInput = {}) {
       const insightType =
         insightTypeBySource[source.type] ?? "OPPORTUNITY";
 
+      const scoreText = `${item.title ?? ""} ${item.description ?? content}`;
+      const scores = computeScores({
+        text: scoreText,
+        type: insightType,
+        reliability: source.reliability,
+      });
+
       const insight = await prisma.insight.create({
         data: {
           startupId: fallbackStartupId,
@@ -113,6 +199,9 @@ export async function runIngestion(input: IngestInput = {}) {
           title: item.title || `Signal ${source.name}`,
           summary: item.description || "Signal importé, analyse IA à compléter.",
           confidence: 0.6,
+          impactScore: scores.impact,
+          urgencyScore: scores.urgency,
+          priorityScore: scores.priority,
         },
       });
       results.insights += 1;

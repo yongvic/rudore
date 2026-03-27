@@ -222,6 +222,9 @@ model Insight {
   title      String
   summary    String
   confidence Float
+  impactScore   Float      @default(0.5)
+  urgencyScore  Float      @default(0.5)
+  priorityScore Float      @default(0.5)
   createdAt  DateTime @default(now())
 
   startup  Startup?     @relation(fields: [startupId], references: [id])

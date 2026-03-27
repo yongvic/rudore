@@ -44,6 +44,10 @@ export function formatConfidence(value: number) {
   return formatNumber(value, 2).replace(".", ",");
 }
 
+export function formatScore(value: number) {
+  return formatNumber(Math.round(value * 100), 0);
+}
+
 export function formatShortDate(date: Date) {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
