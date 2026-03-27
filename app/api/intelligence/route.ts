@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { formatConfidence } from "@/lib/formatters";
+import { formatScore } from "@/lib/formatters";
 
 const insightTags = {
   MARKET: "Réglementation",
@@ -16,7 +16,7 @@ export async function GET() {
   });
 
   const insights = await prisma.insight.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ priorityScore: "desc" }, { createdAt: "desc" }],
     take: 12,
     include: {
       document: {
@@ -25,13 +25,20 @@ export async function GET() {
     },
   });
 
-  const feed = insights.map((insight) => ({
-    title: insight.title,
-    summary: insight.summary,
-    source: insight.document?.job?.source?.name ?? "Signal interne",
-    score: formatConfidence(insight.confidence),
-    tag: insightTags[insight.type as keyof typeof insightTags] ?? "Signal",
-  }));
+  const feed = insights.map((insight) => {
+    const impact = insight.impactScore ?? insight.confidence;
+    const urgency = insight.urgencyScore ?? insight.confidence;
+    const priority = insight.priorityScore ?? insight.confidence;
+    return {
+      title: insight.title,
+      summary: insight.summary,
+      source: insight.document?.job?.source?.name ?? "Signal interne",
+      score: `Priorité ${formatScore(priority)} • Impact ${formatScore(
+        impact
+      )} • Urgence ${formatScore(urgency)}`,
+      tag: insightTags[insight.type as keyof typeof insightTags] ?? "Signal",
+    };
+  });
 
   const filters = [
     { label: "Toutes", active: true },

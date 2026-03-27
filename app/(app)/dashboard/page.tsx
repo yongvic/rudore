@@ -18,19 +18,25 @@ export default async function DashboardPage() {
 
       <main className="flex-1 px-8 py-10">
         <section className="border-y border-border py-6">
-          <div className="grid gap-6 md:grid-cols-4">
-            {kpis.map((kpi) => (
-              <div key={kpi.label} className="flex flex-col gap-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                  {kpi.label}
-                </p>
-                <p className="text-3xl font-semibold text-foreground font-display">
-                  {kpi.value}
-                </p>
-                <p className="text-sm text-muted">{kpi.delta}</p>
-              </div>
-            ))}
-          </div>
+          {kpis.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-4">
+              {kpis.map((kpi) => (
+                <div key={kpi.label} className="flex flex-col gap-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                    {kpi.label}
+                  </p>
+                  <p className="text-3xl font-semibold text-foreground font-display">
+                    {kpi.value}
+                  </p>
+                  <p className="text-sm text-muted">{kpi.delta}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              Aucun KPI disponible pour le moment.
+            </p>
+          )}
         </section>
 
         <div className="mt-10 grid gap-6 xl:grid-cols-12">
@@ -41,19 +47,25 @@ export default async function DashboardPage() {
               </h2>
               <Badge variant="accent">Synthèse</Badge>
             </div>
-            <div className="mt-6 space-y-4">
-              {watchlist.map((item) => (
-                <div key={item.name} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                  <div className="flex items-center justify-between">
-                    <span className="min-w-0 break-words text-base font-medium text-foreground">
-                      {item.name}
-                    </span>
-                    <Badge variant="neutral">{item.status}</Badge>
+            {watchlist.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {watchlist.map((item) => (
+                  <div key={item.name} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <span className="min-w-0 break-words text-base font-medium text-foreground">
+                        {item.name}
+                      </span>
+                      <Badge variant="neutral">{item.status}</Badge>
+                    </div>
+                    <p className="break-words text-sm text-muted">{item.note}</p>
                   </div>
-                  <p className="break-words text-sm text-muted">{item.note}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Aucun portefeuille prioritaire pour l’instant.
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-border/70 bg-surface/70 p-6 xl:col-span-7">
@@ -65,23 +77,29 @@ export default async function DashboardPage() {
                 Explorer tous les insights
               </Button>
             </div>
-            <div className="mt-6 space-y-5">
-              {insights.map((insight) => (
-                <div key={insight.title} className="space-y-2 border-b border-border/60 pb-5 last:border-b-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="min-w-0 break-words text-base font-medium text-foreground">
-                      {insight.title}
+            {insights.length > 0 ? (
+              <div className="mt-6 space-y-5">
+                {insights.map((insight) => (
+                  <div key={insight.title} className="space-y-2 border-b border-border/60 pb-5 last:border-b-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="min-w-0 break-words text-base font-medium text-foreground">
+                        {insight.title}
+                      </p>
+                      <span className="text-xs text-muted">
+                        Confiance {insight.confidence}
+                      </span>
+                    </div>
+                    <p className="break-words text-sm text-muted">
+                      {insight.summary}
                     </p>
-                    <span className="text-xs text-muted">
-                      Confiance {insight.confidence}
-                    </span>
                   </div>
-                  <p className="break-words text-sm text-muted">
-                    {insight.summary}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Aucun insight prioritaire disponible.
+              </p>
+            )}
           </section>
         </div>
 
@@ -93,21 +111,27 @@ export default async function DashboardPage() {
               </h2>
               <Badge variant="danger">{alerts.length} actives</Badge>
             </div>
-            <div className="mt-6 space-y-4">
-              {alerts.map((alert) => (
-                <div key={alert.title} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                      {alert.title}
-                    </p>
-                    <Badge variant={alert.tone}>
-                      {alert.label}
-                    </Badge>
+            {alerts.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {alerts.map((alert) => (
+                  <div key={alert.title} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                        {alert.title}
+                      </p>
+                      <Badge variant={alert.tone}>
+                        {alert.label}
+                      </Badge>
+                    </div>
+                    <p className="break-words text-xs text-muted">{alert.detail}</p>
                   </div>
-                  <p className="break-words text-xs text-muted">{alert.detail}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Aucune alerte active pour le moment.
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-border/70 bg-surface/70 p-6 xl:col-span-8">
@@ -117,24 +141,30 @@ export default async function DashboardPage() {
               </h2>
               <Badge variant="info">Veille en direct</Badge>
             </div>
-            <div className="mt-6 space-y-4">
-              {marketSignals.map((signal) => (
-                <div
-                  key={signal.title}
-                  className="flex items-start justify-between gap-6 border-b border-border/60 pb-4 last:border-b-0 last:pb-0"
-                >
-                  <div>
-                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                      {signal.title}
-                    </p>
-                    <p className="mt-2 break-words text-sm text-muted">
-                      {signal.summary}
-                    </p>
+            {marketSignals.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {marketSignals.map((signal) => (
+                  <div
+                    key={signal.title}
+                    className="flex items-start justify-between gap-6 border-b border-border/60 pb-4 last:border-b-0 last:pb-0"
+                  >
+                    <div>
+                      <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                        {signal.title}
+                      </p>
+                      <p className="mt-2 break-words text-sm text-muted">
+                        {signal.summary}
+                      </p>
+                    </div>
+                    <Badge variant="neutral">{signal.tag}</Badge>
                   </div>
-                  <Badge variant="neutral">{signal.tag}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Aucun signal marché prioritaire.
+              </p>
+            )}
           </section>
         </div>
 
@@ -147,24 +177,30 @@ export default async function DashboardPage() {
               Voir le moteur
             </Button>
           </div>
-          <div className="mt-6 space-y-4">
-            {execution.map((item) => (
-              <div
-                key={item.title}
-                className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {item.title}
+          {execution.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {execution.map((item) => (
+                <div
+                  key={item.title}
+                  className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {item.title}
+                    </p>
+                    <Badge variant={item.tone}>{item.status}</Badge>
+                  </div>
+                  <p className="mt-2 break-words text-sm text-muted">
+                    {item.detail}
                   </p>
-                  <Badge variant={item.tone}>{item.status}</Badge>
                 </div>
-                <p className="mt-2 break-words text-sm text-muted">
-                  {item.detail}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted">
+              Aucune exécution automatisée récente.
+            </p>
+          )}
         </section>
       </main>
     </div>

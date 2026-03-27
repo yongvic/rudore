@@ -25,21 +25,27 @@ export default async function AssistantPage() {
               </h2>
               <Badge variant="accent">Mémoire activée</Badge>
             </div>
-            <div className="mt-6 space-y-5">
-              {conversation.map((item, index) => (
-                <div
-                  key={index}
-                  className="border-b border-border/60 pb-5 last:border-b-0 last:pb-0"
-                >
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                    {item.role === "user" ? "Vous" : "Rudore IA"}
-                  </p>
-                  <p className="mt-2 break-words text-sm text-foreground">
-                    {item.content}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {conversation.length > 0 ? (
+              <div className="mt-6 space-y-5">
+                {conversation.map((item, index) => (
+                  <div
+                    key={index}
+                    className="border-b border-border/60 pb-5 last:border-b-0 last:pb-0"
+                  >
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                      {item.role === "user" ? "Vous" : "Rudore IA"}
+                    </p>
+                    <p className="mt-2 break-words text-sm text-foreground">
+                      {item.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Aucune conversation active. Lancez une première requête.
+              </p>
+            )}
             <div className="mt-6 flex items-center gap-3 border-t border-border/60 pt-5">
               <input
                 className="h-11 flex-1 rounded-full border border-border bg-transparent px-4 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/70"
@@ -54,27 +60,39 @@ export default async function AssistantPage() {
             <h2 className="text-lg font-semibold text-foreground font-display">
               Contexte opérationnel
             </h2>
-            <div className="mt-6 space-y-4">
-              {context.map((item) => (
-                <div key={item.label} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 break-words text-sm text-foreground">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {context.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {context.map((item) => (
+                  <div key={item.label} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 break-words text-sm text-foreground">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Contexte indisponible pour le moment.
+              </p>
+            )}
             <div className="mt-6 border-t border-border/60 pt-5">
               <p className="text-xs uppercase tracking-[0.2em] text-muted">
                 Actions suggérées
               </p>
-              <ul className="mt-3 space-y-2 text-sm text-foreground">
-                {suggestions.map((suggestion) => (
-                  <li key={suggestion}>{suggestion}</li>
-                ))}
-              </ul>
+              {suggestions.length > 0 ? (
+                <ul className="mt-3 space-y-2 text-sm text-foreground">
+                  {suggestions.map((suggestion) => (
+                    <li key={suggestion}>{suggestion}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-muted">
+                  Aucune suggestion IA disponible.
+                </p>
+              )}
             </div>
           </section>
         </div>

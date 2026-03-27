@@ -2,8 +2,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  engineType = "binary"
-  binaryTargets = ["native"]
+  engineType = "library"
 }
 
 datasource db {
@@ -172,6 +171,7 @@ model DataSource {
   workspaceId String
   name        String
   url         String
+  rssUrl      String?
   type        String
   reliability Float
   createdAt   DateTime @default(now())
@@ -222,6 +222,9 @@ model Insight {
   title      String
   summary    String
   confidence Float
+  impactScore   Float      @default(0.5)
+  urgencyScore  Float      @default(0.5)
+  priorityScore Float      @default(0.5)
   createdAt  DateTime @default(now())
 
   startup  Startup?     @relation(fields: [startupId], references: [id])

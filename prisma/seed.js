@@ -10,25 +10,51 @@ async function safeDelete(fn) {
   }
 }
 
+function score(impact, urgency) {
+  const clamp = (value) => Math.max(0.1, Math.min(0.95, value));
+  const impactScore = clamp(impact);
+  const urgencyScore = clamp(urgency);
+  const priorityScore = clamp(impactScore * 0.6 + urgencyScore * 0.4);
+  return {
+    impactScore,
+    urgencyScore,
+    priorityScore: Number(priorityScore.toFixed(2)),
+  };
+}
+
 async function main() {
-  await safeDelete(() => prisma.workflowRun.deleteMany());
-  await safeDelete(() => prisma.automationWorkflow.deleteMany());
-  await safeDelete(() => prisma.alert.deleteMany());
-  await safeDelete(() => prisma.recommendation.deleteMany());
-  await safeDelete(() => prisma.insight.deleteMany());
-  await safeDelete(() => prisma.rawDocument.deleteMany());
-  await safeDelete(() => prisma.scrapeJob.deleteMany());
-  await safeDelete(() => prisma.dataSource.deleteMany());
-  await safeDelete(() => prisma.activityEvent.deleteMany());
-  await safeDelete(() => prisma.metric.deleteMany());
-  await safeDelete(() => prisma.startupMember.deleteMany());
-  await safeDelete(() => prisma.startup.deleteMany());
-  await safeDelete(() => prisma.ecosystemEdge.deleteMany());
-  await safeDelete(() => prisma.ecosystemNode.deleteMany());
-  await safeDelete(() => prisma.workspaceUser.deleteMany());
-  await safeDelete(() => prisma.aiRun.deleteMany());
-  await safeDelete(() => prisma.user.deleteMany());
-  await safeDelete(() => prisma.workspace.deleteMany());
+  const reset = process.env.SEED_RESET === "1";
+
+  if (reset) {
+    await safeDelete(() => prisma.workflowRun.deleteMany());
+    await safeDelete(() => prisma.automationWorkflow.deleteMany());
+    await safeDelete(() => prisma.alert.deleteMany());
+    await safeDelete(() => prisma.recommendation.deleteMany());
+    await safeDelete(() => prisma.insight.deleteMany());
+    await safeDelete(() => prisma.rawDocument.deleteMany());
+    await safeDelete(() => prisma.scrapeJob.deleteMany());
+    await safeDelete(() => prisma.dataSource.deleteMany());
+    await safeDelete(() => prisma.activityEvent.deleteMany());
+    await safeDelete(() => prisma.metric.deleteMany());
+    await safeDelete(() => prisma.startupMember.deleteMany());
+    await safeDelete(() => prisma.startup.deleteMany());
+    await safeDelete(() => prisma.ecosystemEdge.deleteMany());
+    await safeDelete(() => prisma.ecosystemNode.deleteMany());
+    await safeDelete(() => prisma.workspaceUser.deleteMany());
+    await safeDelete(() => prisma.aiRun.deleteMany());
+    await safeDelete(() => prisma.user.deleteMany());
+    await safeDelete(() => prisma.workspace.deleteMany());
+  } else {
+    console.log("seed> reset disabled (set SEED_RESET=1 to wipe data)");
+    const existing = await prisma.workspace.findUnique({
+      where: { slug: "rudore-os" },
+      select: { id: true },
+    });
+    if (existing) {
+      console.log("seed> data already present, skipping");
+      return;
+    }
+  }
 
   const workspace = await prisma.workspace.create({
     data: {
@@ -279,26 +305,29 @@ async function main() {
     prisma.dataSource.create({
       data: {
         workspaceId: workspace.id,
-        name: "BCEAO",
-        url: "https://www.bceao.int",
+        name: "AllAfrica West Africa",
+        url: "https://allafrica.com/westafrica/",
+        rssUrl: "https://allafrica.com/tools/headlines/rdf/westafrica/headlines.rdf",
         type: "Regulatory",
-        reliability: 0.86,
+        reliability: 0.82,
       },
     }),
     prisma.dataSource.create({
       data: {
         workspaceId: workspace.id,
-        name: "TechPoint",
+        name: "Techpoint Africa",
         url: "https://techpoint.africa",
+        rssUrl: "https://techpoint.africa/subject/governance-policy/feed",
         type: "Media",
-        reliability: 0.74,
+        reliability: 0.76,
       },
     }),
     prisma.dataSource.create({
       data: {
         workspaceId: workspace.id,
-        name: "Google Trends",
-        url: "https://trends.google.com",
+        name: "AllAfrica Business",
+        url: "https://allafrica.com/business/",
+        rssUrl: "https://allafrica.com/tools/headlines/rdf/business/headlines.rdf",
         type: "Trends",
         reliability: 0.8,
       },
@@ -332,32 +361,34 @@ async function main() {
     prisma.rawDocument.create({
       data: {
         jobId: jobs[0].id,
-        url: "https://www.bceao.int/regulation-kyc",
-        title: "Régulation KYC 2026",
-        content: "La BCEAO prépare de nouvelles exigences KYC pour 2026.",
+        url: "https://allafrica.com/stories/202603250123.html",
+        title: "Régulation fintech en Afrique de l'Ouest",
+        content:
+          "Des autorités régionales préparent un renforcement des exigences de conformité pour les fintechs.",
         lang: "fr",
-        hash: "bceao-kyc-2026",
+        hash: "allafrica-westafrica-fintech-2026",
       },
     }),
     prisma.rawDocument.create({
       data: {
         jobId: jobs[1].id,
-        url: "https://techpoint.africa/speedmaker-competitor",
-        title: "Levée concurrent SpeedMaker",
+        url: "https://techpoint.africa/2026/03/21/ghana-domain-act/",
+        title: "Ghana veut généraliser les domaines .gh",
         content:
-          "Un acteur nigérian annonce 12M$ pour industrialiser des micro-usines.",
+          "Un projet de loi pourrait imposer l'usage des domaines nationaux pour les entreprises.",
         lang: "fr",
-        hash: "techpoint-speedmaker-competitor",
+        hash: "techpoint-ghana-domain-act-2026",
       },
     }),
     prisma.rawDocument.create({
       data: {
         jobId: jobs[2].id,
-        url: "https://trends.google.com/health",
-        title: "Tendance santé digitale",
-        content: "Les requêtes télémédecine progressent de 28% sur 3 mois.",
+        url: "https://allafrica.com/stories/202603220456.html",
+        title: "Accélération de la demande B2B en Afrique",
+        content:
+          "Les investissements dans les outils de productivité et les services B2B progressent sur le trimestre.",
         lang: "fr",
-        hash: "trends-health-2026",
+        hash: "allafrica-business-b2b-2026",
       },
     }),
     prisma.rawDocument.create({
@@ -382,6 +413,7 @@ async function main() {
         summary:
           "La BCEAO prépare de nouvelles exigences KYC pour 2026. Impact potentiel sur DoAsi.",
         confidence: 0.81,
+        ...score(0.78, 0.72),
       },
     }),
     prisma.insight.create({
@@ -393,6 +425,7 @@ async function main() {
         summary:
           "Un acteur nigérian annonce 12M$ pour industrialiser des micro-usines.",
         confidence: 0.77,
+        ...score(0.74, 0.7),
       },
     }),
     prisma.insight.create({
@@ -403,6 +436,7 @@ async function main() {
         title: "Tendance santé digitale",
         summary: "Les requêtes télémédecine progressent de 28% sur 3 mois.",
         confidence: 0.84,
+        ...score(0.7, 0.56),
       },
     }),
     prisma.insight.create({
@@ -413,6 +447,7 @@ async function main() {
         title: "Logistique urbaine",
         summary: "Les opérateurs demandent plus de tracking en temps réel.",
         confidence: 0.73,
+        ...score(0.68, 0.58),
       },
     }),
     prisma.insight.create({
@@ -422,6 +457,7 @@ async function main() {
         title: "Concurrence directe",
         summary: "2 acteurs locaux préparent des offres freemium.",
         confidence: 0.78,
+        ...score(0.71, 0.74),
       },
     }),
     prisma.insight.create({
@@ -431,6 +467,7 @@ async function main() {
         title: "Demande secteur",
         summary: "Recherche 'paiement à la livraison' +18%.",
         confidence: 0.7,
+        ...score(0.64, 0.52),
       },
     }),
     prisma.insight.create({
@@ -440,6 +477,7 @@ async function main() {
         title: "Subventions Ghana",
         summary: "Programmes industriels annoncés Q3.",
         confidence: 0.69,
+        ...score(0.6, 0.5),
       },
     }),
     prisma.insight.create({
@@ -449,6 +487,7 @@ async function main() {
         title: "Tendance télémédecine",
         summary: "Hausse des requêtes en Afrique de l'Est.",
         confidence: 0.76,
+        ...score(0.66, 0.54),
       },
     }),
     prisma.insight.create({
@@ -458,6 +497,7 @@ async function main() {
         title: "Besoin conformité",
         summary: "Nouvelles obligations RH au Sénégal.",
         confidence: 0.71,
+        ...score(0.7, 0.73),
       },
     }),
     prisma.insight.create({
@@ -467,6 +507,7 @@ async function main() {
         title: "Subventions logistiques",
         summary: "Appels d'offres publics Q2.",
         confidence: 0.74,
+        ...score(0.62, 0.55),
       },
     }),
   ]);

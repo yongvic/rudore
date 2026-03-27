@@ -18,21 +18,27 @@ export default async function SettingsPage() {
           <h2 className="text-lg font-semibold text-foreground font-display">
             Configuration
           </h2>
-          <div className="mt-6 space-y-4">
-            {data.settings.map((item) => (
-              <div key={item.title} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                <div className="flex items-center justify-between">
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {item.title}
+          {data.settings.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {data.settings.map((item) => (
+                <div key={item.title} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {item.title}
+                    </p>
+                    <Badge variant="neutral">Actif</Badge>
+                  </div>
+                  <p className="mt-2 break-words text-sm text-muted">
+                    {item.detail}
                   </p>
-                  <Badge variant="neutral">Actif</Badge>
                 </div>
-                <p className="mt-2 break-words text-sm text-muted">
-                  {item.detail}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted">
+              Aucun paramètre disponible actuellement.
+            </p>
+          )}
         </section>
       </main>
     </div>
