@@ -34,6 +34,14 @@ export function WorkflowBuilder({ workflow }: Props) {
   const [name, setName] = useState(workflow.name);
   const [description, setDescription] = useState(workflow.description ?? "");
   const [enabled, setEnabled] = useState(workflow.enabled);
+  const [workflowType, setWorkflowType] = useState(
+    workflow.workflowType ?? "custom"
+  );
+  const [priority, setPriority] = useState(workflow.priority ?? 5);
+  const [maxRetries, setMaxRetries] = useState(workflow.maxRetries ?? 1);
+  const [retryBackoffSeconds, setRetryBackoffSeconds] = useState(
+    workflow.retryBackoffSeconds ?? 120
+  );
   const [triggers, setTriggers] = useState<EditableTrigger[]>(
     workflow.triggers.map((trigger) => ({
       ...trigger,
@@ -127,6 +135,10 @@ export function WorkflowBuilder({ workflow }: Props) {
         name,
         description,
         enabled,
+        workflowType,
+        priority,
+        maxRetries,
+        retryBackoffSeconds,
         triggers: preparedTriggers,
         actions: preparedActions,
       };
@@ -211,6 +223,60 @@ export function WorkflowBuilder({ workflow }: Props) {
               onChange={(event) => setName(event.target.value)}
             />
           </label>
+          <label className="text-sm text-muted">
+            Type de workflow
+            <select
+              className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none"
+              value={workflowType}
+              onChange={(event) => setWorkflowType(event.target.value)}
+            >
+              <option value="custom">Custom</option>
+              <option value="market-intelligence">Market intelligence</option>
+              <option value="startup-monitoring">Startup monitoring</option>
+              <option value="opportunity-detection">Opportunity detection</option>
+              <option value="content-automation">Content automation</option>
+              <option value="alerting">Alerting</option>
+              <option value="talent-matching">Talent matching</option>
+              <option value="automation-execution">Automation execution</option>
+            </select>
+          </label>
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="text-sm text-muted">
+              Priorité (1-10)
+              <input
+                type="number"
+                min={1}
+                max={10}
+                className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50"
+                value={priority}
+                onChange={(event) => setPriority(Number(event.target.value))}
+              />
+            </label>
+            <label className="text-sm text-muted">
+              Retries max
+              <input
+                type="number"
+                min={0}
+                max={5}
+                className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50"
+                value={maxRetries}
+                onChange={(event) => setMaxRetries(Number(event.target.value))}
+              />
+            </label>
+            <label className="text-sm text-muted">
+              Backoff (sec)
+              <input
+                type="number"
+                min={30}
+                max={3600}
+                className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50"
+                value={retryBackoffSeconds}
+                onChange={(event) =>
+                  setRetryBackoffSeconds(Number(event.target.value))
+                }
+              />
+            </label>
+          </div>
           <label className="text-sm text-muted">
             Description
             <textarea

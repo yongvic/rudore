@@ -37,6 +37,8 @@
 - CRUD workflows + déclenchement manuel
 - Runner d’exécution + logs détaillés
 - Règles d’escalade (action dédiée) + schedule hebdo
+- Workflows métier (intelligence, monitoring, opportunités, alerting, contenu, talent)
+- Scheduler + priorités + retries
 
 ## Phase 4 — Ecosystem Graph (à faire)
 - Graphe dynamique + édition des relations

@@ -295,6 +295,10 @@ model AutomationWorkflow {
   description String?
   lastRunAt   DateTime?
   nextRunAt   DateTime?
+  workflowType String?
+  priority     Int      @default(5)
+  maxRetries   Int      @default(1)
+  retryBackoffSeconds Int @default(120)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   runs      WorkflowRun[]
@@ -302,6 +306,7 @@ model AutomationWorkflow {
   steps     AutomationAction[]
 
   @@index([workspaceId])
+  @@index([nextRunAt])
 }
 
 model AutomationTrigger {
@@ -339,6 +344,7 @@ model WorkflowRun {
   durationMs Int?
   error      String?
   triggeredBy String?
+  attempt    Int      @default(1)
   log        Json?
 
   workflow AutomationWorkflow @relation(fields: [workflowId], references: [id])

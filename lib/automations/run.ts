@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { getActionLabel, getTriggerLabel } from "@/lib/automations/registry";
-import { computeNextWeeklyRun } from "@/lib/automations/schedule";
+import {
+  computeNextDailyRun,
+  computeNextWeeklyRun,
+} from "@/lib/automations/schedule";
+import { executeWorkflowByType } from "@/lib/automations/workflows";
 
 type RunResult = {
   runId: string;
@@ -11,7 +15,8 @@ type RunResult = {
 
 export async function runWorkflow(
   workflowId: string,
-  triggeredBy: string = "manual"
+  triggeredBy: string = "manual",
+  context: { workspaceId?: string; startupId?: string | null; alertId?: string | null } = {}
 ): Promise<RunResult> {
   const workflow = await prisma.automationWorkflow.findUnique({
     where: { id: workflowId },
@@ -32,6 +37,7 @@ export async function runWorkflow(
       status: "RUNNING",
       startedAt,
       triggeredBy,
+      attempt: 1,
       log: {
         title: `Exécution ${workflow.name}`,
         detail: `Déclenché par ${getTriggerLabel(
@@ -41,74 +47,114 @@ export async function runWorkflow(
     },
   });
 
-  try {
-    const steps = workflow.steps.map((step) => ({
-      type: step.type,
-      label: getActionLabel(step.type),
-      status: "SUCCESS",
-      detail: `Action ${getActionLabel(step.type)} exécutée.`,
-    }));
+  const maxAttempts = Math.max(1, (workflow.maxRetries ?? 1) + 1);
+  let attempt = 1;
+  let lastError = "";
 
-    const finishedAt = new Date();
-    const durationMs = finishedAt.getTime() - startedAt.getTime();
+  while (attempt <= maxAttempts) {
+    try {
+      const result = await executeWorkflowByType(workflow.workflowType, {
+        workspaceId: context.workspaceId ?? workflow.workspaceId,
+        startupId: context.startupId ?? null,
+        alertId: context.alertId ?? null,
+      });
 
-    await prisma.workflowRun.update({
-      where: { id: run.id },
-      data: {
+      const finishedAt = new Date();
+      const durationMs = finishedAt.getTime() - startedAt.getTime();
+
+      await prisma.workflowRun.update({
+        where: { id: run.id },
+        data: {
+          status: "SUCCESS",
+          finishedAt,
+          durationMs,
+          attempt,
+          log: {
+            title: result.title,
+            detail: result.detail,
+            meta: result.meta ?? null,
+          },
+        },
+      });
+
+      const scheduleTrigger = workflow.triggers.find((trigger) =>
+        trigger.type.startsWith("schedule")
+      );
+      const nextRunAt =
+        scheduleTrigger?.type === "schedule.weekly"
+          ? computeNextWeeklyRun(
+              scheduleTrigger.config as { day?: string; time?: string }
+            )
+          : scheduleTrigger?.type === "schedule.daily"
+            ? computeNextDailyRun(
+                scheduleTrigger.config as { time?: string }
+              )
+            : workflow.nextRunAt;
+
+      await prisma.automationWorkflow.update({
+        where: { id: workflow.id },
+        data: { lastRunAt: finishedAt, nextRunAt },
+      });
+
+      return {
+        runId: run.id,
         status: "SUCCESS",
-        finishedAt,
-        durationMs,
-        log: {
-          title: `Workflow ${workflow.name} exécuté`,
-          detail: `${steps.length} actions terminées.`,
-          steps,
-        },
-      },
-    });
-
-    const scheduleTrigger = workflow.triggers.find((trigger) =>
-      trigger.type.startsWith("schedule")
-    );
-    const nextRunAt =
-      scheduleTrigger?.type === "schedule.weekly"
-        ? computeNextWeeklyRun(scheduleTrigger.config as { day?: string; time?: string })
-        : workflow.nextRunAt;
-
-    await prisma.automationWorkflow.update({
-      where: { id: workflow.id },
-      data: { lastRunAt: finishedAt, nextRunAt },
-    });
-
-    return {
-      runId: run.id,
-      status: "SUCCESS",
-      title: `Workflow ${workflow.name} exécuté`,
-      detail: `${steps.length} actions terminées.`,
-    };
-  } catch (error) {
-    const finishedAt = new Date();
-    const durationMs = finishedAt.getTime() - startedAt.getTime();
-    const message = error instanceof Error ? error.message : "Erreur inconnue.";
-
-    await prisma.workflowRun.update({
-      where: { id: run.id },
-      data: {
-        status: "FAILED",
-        finishedAt,
-        durationMs,
-        error: message,
-        log: {
-          title: `Workflow ${workflow.name} échoué`,
-          detail: message,
-        },
-      },
-    });
-
-    return {
-      runId: run.id,
-      status: "FAILED",
-      title: `Workflow ${workflow.name} échoué`,
-      detail: message,
-    };
+        title: result.title,
+        detail: result.detail,
+      };
+    } catch (error) {
+      lastError =
+        error instanceof Error ? error.message : "Erreur inconnue.";
+      if (attempt >= maxAttempts) break;
+      attempt += 1;
+      await prisma.workflowRun.update({
+        where: { id: run.id },
+        data: { status: "RETRYING", attempt },
+      });
+      const backoffMs = (workflow.retryBackoffSeconds ?? 120) * 1000;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
   }
+
+  const finishedAt = new Date();
+  const durationMs = finishedAt.getTime() - startedAt.getTime();
+  await prisma.workflowRun.update({
+    where: { id: run.id },
+    data: {
+      status: "FAILED",
+      finishedAt,
+      durationMs,
+      error: lastError,
+      attempt,
+      log: {
+        title: `Workflow ${workflow.name} échoué`,
+        detail: lastError,
+      },
+    },
+  });
+
+  return {
+    runId: run.id,
+    status: "FAILED",
+    title: `Workflow ${workflow.name} échoué`,
+    detail: lastError,
+  };
+}
+
+export async function runScheduler() {
+  const due = await prisma.automationWorkflow.findMany({
+    where: {
+      enabled: true,
+      nextRunAt: { lte: new Date() },
+      workflowType: { not: "automation-execution" },
+    },
+    orderBy: [{ priority: "desc" }, { nextRunAt: "asc" }],
+  });
+
+  const results = [];
+  for (const workflow of due) {
+    results.push(await runWorkflow(workflow.id, "schedule"));
+  }
+
+  return results;
 }

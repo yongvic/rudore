@@ -6,7 +6,10 @@ import {
   getTriggerLabel,
   triggerRegistry,
 } from "@/lib/automations/registry";
-import { computeNextWeeklyRun } from "@/lib/automations/schedule";
+import {
+  computeNextDailyRun,
+  computeNextWeeklyRun,
+} from "@/lib/automations/schedule";
 
 export async function GET() {
   const workflows = await prisma.automationWorkflow.findMany({
@@ -36,6 +39,7 @@ export async function GET() {
       lastRun: workflow.runs[0]?.startedAt
         ? formatRelativeTime(workflow.runs[0].startedAt)
         : "—",
+      workflowType: workflow.workflowType ?? null,
     };
   });
 
@@ -66,6 +70,8 @@ export async function POST() {
   const nextRunAt =
     triggerRegistry[0]?.type === "schedule.weekly"
       ? computeNextWeeklyRun(triggerRegistry[0].defaultConfig as { day?: string; time?: string })
+      : triggerRegistry[0]?.type === "schedule.daily"
+        ? computeNextDailyRun(triggerRegistry[0].defaultConfig as { time?: string })
       : null;
 
   const workflow = await prisma.automationWorkflow.create({
@@ -76,6 +82,10 @@ export async function POST() {
       trigger: { label: triggerRegistry[0]?.label ?? "Déclencheur", type: triggerRegistry[0]?.type ?? "manual" },
       actions: { label: actionRegistry[0]?.label ?? "Action", type: actionRegistry[0]?.type ?? "notify" },
       description: "Workflow en cours de configuration.",
+      workflowType: "custom",
+      priority: 5,
+      maxRetries: 1,
+      retryBackoffSeconds: 120,
       nextRunAt,
     },
   });

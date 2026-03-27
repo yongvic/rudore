@@ -9,6 +9,7 @@ type IngestInput = {
   sourceId?: string;
   startupId?: string | null;
   startupSlug?: string;
+  workspaceId?: string;
 };
 
 const insightTypeBySource: Record<string, "MARKET" | "COMPETITOR" | "TREND" | "OPPORTUNITY"> = {
@@ -163,7 +164,11 @@ function computeScores({
 
 export async function runIngestion(input: IngestInput = {}) {
   const sources = await prisma.dataSource.findMany({
-    where: input.sourceId ? { id: input.sourceId } : {},
+    where: input.sourceId
+      ? { id: input.sourceId }
+      : input.workspaceId
+        ? { workspaceId: input.workspaceId }
+        : {},
     orderBy: { createdAt: "asc" },
   });
 
@@ -171,6 +176,7 @@ export async function runIngestion(input: IngestInput = {}) {
   const aiConfigs = await getWorkspaceAiConfigs(workspaceIds);
 
   const startups = await prisma.startup.findMany({
+    where: input.workspaceId ? { workspaceId: input.workspaceId } : {},
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, slug: true, sector: true, tags: true },
   });

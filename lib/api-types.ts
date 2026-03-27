@@ -138,6 +138,7 @@ export type AutomationWorkflowItem = {
   action: string;
   status: string;
   lastRun?: string;
+  workflowType?: string | null;
 };
 
 export type AutomationHistoryItem = {
@@ -178,6 +179,10 @@ export type AutomationWorkflowDetail = {
   actions: AutomationAction[];
   lastRunAt: string | null;
   nextRunAt: string | null;
+  workflowType?: string | null;
+  priority?: number;
+  maxRetries?: number;
+  retryBackoffSeconds?: number;
 };
 
 export type EcosystemNodeItem = {

@@ -1,12 +1,19 @@
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { getActionLabel, getTriggerLabel } from "@/lib/automations/registry";
-import { computeNextWeeklyRun } from "@/lib/automations/schedule";
+import {
+  computeNextDailyRun,
+  computeNextWeeklyRun,
+} from "@/lib/automations/schedule";
 
 const workflowSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional().nullable(),
   enabled: z.boolean(),
+  workflowType: z.string().optional().nullable(),
+  priority: z.number().int().min(1).max(10).optional(),
+  maxRetries: z.number().int().min(0).max(5).optional(),
+  retryBackoffSeconds: z.number().int().min(30).max(3600).optional(),
   triggers: z
     .array(
       z.object({
@@ -53,6 +60,10 @@ export async function GET(
     enabled: workflow.enabled,
     lastRunAt: workflow.lastRunAt,
     nextRunAt: workflow.nextRunAt,
+    workflowType: workflow.workflowType,
+    priority: workflow.priority,
+    maxRetries: workflow.maxRetries,
+    retryBackoffSeconds: workflow.retryBackoffSeconds,
     triggers: workflow.triggers.map((trigger) => ({
       id: trigger.id,
       type: trigger.type,
@@ -82,13 +93,25 @@ export async function PUT(
     return Response.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const { name, description, enabled, triggers, actions } = parsed.data;
+  const {
+    name,
+    description,
+    enabled,
+    workflowType,
+    priority,
+    maxRetries,
+    retryBackoffSeconds,
+    triggers,
+    actions,
+  } = parsed.data;
   const scheduleTrigger = triggers.find((trigger) =>
     trigger.type.startsWith("schedule")
   );
   const nextRunAt =
     scheduleTrigger?.type === "schedule.weekly"
       ? computeNextWeeklyRun(scheduleTrigger.config as { day?: string; time?: string })
+      : scheduleTrigger?.type === "schedule.daily"
+        ? computeNextDailyRun(scheduleTrigger.config as { time?: string })
       : null;
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -100,6 +123,10 @@ export async function PUT(
         enabled,
         trigger: { label: getTriggerLabel(triggers[0].type), type: triggers[0].type },
         actions: { label: getActionLabel(actions[0].type), type: actions[0].type },
+        workflowType,
+        priority,
+        maxRetries,
+        retryBackoffSeconds,
         nextRunAt,
       },
     });

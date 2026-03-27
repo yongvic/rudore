@@ -7,6 +7,7 @@ export async function POST(request: Request) {
     sourceId: payload.sourceId,
     startupId: payload.startupId ?? null,
     startupSlug: payload.startupSlug,
+    workspaceId: payload.workspaceId,
   });
 
   return Response.json({ status: "ok", result });

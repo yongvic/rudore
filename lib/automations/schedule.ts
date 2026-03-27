@@ -36,3 +36,20 @@ export function computeNextWeeklyRun(config: { day?: string; time?: string }) {
 
   return next;
 }
+
+export function computeNextDailyRun(config: { time?: string }) {
+  if (!config.time) return null;
+  const [hourRaw, minuteRaw] = config.time.split(":");
+  const hour = Number(hourRaw);
+  const minute = Number(minuteRaw ?? 0);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(hour, minute, 0, 0);
+
+  if (next <= now) {
+    next.setDate(next.getDate() + 1);
+  }
+  return next;
+}
