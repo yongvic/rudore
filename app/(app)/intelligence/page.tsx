@@ -1,4 +1,4 @@
-import { TopBar } from "@/components/layout/top-bar";
+﻿import { TopBar } from "@/components/layout/top-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiGet } from "@/lib/api";
@@ -64,3 +64,4 @@ export default async function IntelligencePage() {
     </div>
   );
 }
+
