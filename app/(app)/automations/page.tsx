@@ -26,47 +26,59 @@ export default async function AutomationsPage() {
               Voir le builder
             </Button>
           </div>
-          <div className="mt-6 space-y-4">
-            {workflows.map((workflow) => (
-              <div key={workflow.name} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                <div className="flex items-center justify-between">
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {workflow.name}
-                  </p>
-                  <Badge variant="neutral">{workflow.status}</Badge>
+          {workflows.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {workflows.map((workflow) => (
+                <div key={workflow.name} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {workflow.name}
+                    </p>
+                    <Badge variant="neutral">{workflow.status}</Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted">
+                    <span className="min-w-0 break-words">
+                      Trigger: {workflow.trigger}
+                    </span>
+                    <span className="min-w-0 break-words">
+                      Action: {workflow.action}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted">
-                  <span className="min-w-0 break-words">
-                    Trigger: {workflow.trigger}
-                  </span>
-                  <span className="min-w-0 break-words">
-                    Action: {workflow.action}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted">
+              Aucun workflow actif. Créez un premier scénario.
+            </p>
+          )}
         </section>
 
         <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
           <h2 className="text-lg font-semibold text-foreground font-display">
             Historique d'exécution
           </h2>
-          <div className="mt-6 space-y-4">
-            {history.map((item) => (
-              <div key={item.title} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                <div className="flex items-center justify-between">
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {item.title}
+          {history.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {history.map((item) => (
+                <div key={item.title} className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {item.title}
+                    </p>
+                    <span className="text-xs text-muted">{item.time}</span>
+                  </div>
+                  <p className="mt-2 break-words text-sm text-muted">
+                    {item.detail}
                   </p>
-                  <span className="text-xs text-muted">{item.time}</span>
                 </div>
-                <p className="mt-2 break-words text-sm text-muted">
-                  {item.detail}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted">
+              Aucun historique d’exécution disponible.
+            </p>
+          )}
         </section>
       </main>
     </div>

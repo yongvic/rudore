@@ -35,30 +35,36 @@ export default async function IntelligencePage() {
             <span>Source</span>
             <span>Score</span>
           </div>
-          <div className="divide-y divide-border/60">
-            {feed.map((item) => (
-              <div
-                key={item.title}
-                className="flex min-w-0 flex-col gap-3 px-6 py-5 text-sm md:grid md:grid-cols-[2fr_1fr_1fr] md:gap-6"
-              >
-                <div>
-                  <div className="flex items-center gap-3">
-                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                      {item.title}
+          {feed.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {feed.map((item) => (
+                <div
+                  key={item.title}
+                  className="flex min-w-0 flex-col gap-3 px-6 py-5 text-sm md:grid md:grid-cols-[2fr_1fr_1fr] md:gap-6"
+                >
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                        {item.title}
+                      </p>
+                      <Badge variant="neutral">{item.tag}</Badge>
+                    </div>
+                    <p className="mt-2 break-words text-sm text-muted">
+                      {item.summary}
                     </p>
-                    <Badge variant="neutral">{item.tag}</Badge>
                   </div>
-                  <p className="mt-2 break-words text-sm text-muted">
-                    {item.summary}
-                  </p>
+                  <span className="min-w-0 break-words text-sm text-muted">
+                    {item.source}
+                  </span>
+                  <span className="text-sm text-muted">{item.score}</span>
                 </div>
-                <span className="min-w-0 break-words text-sm text-muted">
-                  {item.source}
-                </span>
-                <span className="text-sm text-muted">{item.score}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="px-6 py-8 text-sm text-muted">
+              Aucun signal détecté pour le moment.
+            </div>
+          )}
         </section>
       </main>
     </div>

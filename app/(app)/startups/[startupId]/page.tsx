@@ -48,21 +48,27 @@ export default async function StartupDetailPage({
               Exporter
             </Button>
           </div>
-          <div className="mt-6 grid gap-5 md:grid-cols-4">
-            {startup.metrics.map((metric) => (
-              <div key={metric.label} className="border-b border-border/60 pb-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                  {metric.label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-foreground font-display">
-                  {metric.value}
-                </p>
-                <p className="break-words text-sm text-muted">
-                  {metric.delta}
-                </p>
-              </div>
-            ))}
-          </div>
+          {startup.metrics.length > 0 ? (
+            <div className="mt-6 grid gap-5 md:grid-cols-4">
+              {startup.metrics.map((metric) => (
+                <div key={metric.label} className="border-b border-border/60 pb-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                    {metric.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-foreground font-display">
+                    {metric.value}
+                  </p>
+                  <p className="break-words text-sm text-muted">
+                    {metric.delta}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted">
+              Aucun indicateur clé disponible pour cette startup.
+            </p>
+          )}
         </section>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-12">
@@ -70,35 +76,47 @@ export default async function StartupDetailPage({
             <h2 className="text-lg font-semibold text-foreground font-display">
               Activité récente
             </h2>
-            <div className="mt-6 space-y-4">
-              {startup.timeline.map((item) => (
-                <div key={item.title} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                  <div className="flex items-center justify-between">
-                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                      {item.title}
-                    </p>
-                    <span className="text-xs text-muted">{item.date}</span>
+            {startup.timeline.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {startup.timeline.map((item) => (
+                  <div key={item.title} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                        {item.title}
+                      </p>
+                      <span className="text-xs text-muted">{item.date}</span>
+                    </div>
+                    <p className="break-words text-sm text-muted">{item.detail}</p>
                   </div>
-                  <p className="break-words text-sm text-muted">{item.detail}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Aucune activité récente signalée.
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-border/70 bg-surface/70 p-6 xl:col-span-6">
             <h2 className="text-lg font-semibold text-foreground font-display">
               Recommandations IA
             </h2>
-            <div className="mt-6 space-y-4">
-              {startup.recommendations.map((item) => (
-                <div key={item.title} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {item.title}
-                  </p>
-                  <p className="break-words text-sm text-muted">{item.detail}</p>
-                </div>
-              ))}
-            </div>
+            {startup.recommendations.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {startup.recommendations.map((item) => (
+                  <div key={item.title} className="space-y-2 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {item.title}
+                    </p>
+                    <p className="break-words text-sm text-muted">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-muted">
+                Pas de recommandations IA disponibles.
+              </p>
+            )}
           </section>
         </div>
 
@@ -106,21 +124,27 @@ export default async function StartupDetailPage({
           <h2 className="text-lg font-semibold text-foreground font-display">
             Intelligence marché
           </h2>
-          <div className="mt-6 space-y-4">
-            {startup.intelligence.map((item) => (
-              <div key={item.title} className="flex items-start justify-between gap-6 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
-                <div>
-                  <p className="min-w-0 break-words text-sm font-medium text-foreground">
-                    {item.title}
-                  </p>
-                  <p className="break-words text-sm text-muted">
-                    {item.detail}
-                  </p>
+          {startup.intelligence.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {startup.intelligence.map((item) => (
+                <div key={item.title} className="flex items-start justify-between gap-6 border-b border-border/60 pb-4 last:border-b-0 last:pb-0">
+                  <div>
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {item.title}
+                    </p>
+                    <p className="break-words text-sm text-muted">
+                      {item.detail}
+                    </p>
+                  </div>
+                  <Badge variant="neutral">{item.tag}</Badge>
                 </div>
-                <Badge variant="neutral">{item.tag}</Badge>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-muted">
+              Aucune intelligence marché disponible.
+            </p>
+          )}
         </section>
       </main>
     </div>

@@ -24,41 +24,47 @@ export default async function StartupsPage() {
             <span>Priorité</span>
             <span>État</span>
           </div>
-          <div className="divide-y divide-border/60">
-            {data.startups.map((startup) => (
-              <Link
-                key={startup.id}
-                href={`/startups/${startup.id}`}
-                className="flex min-w-0 flex-col gap-2 px-6 py-5 text-sm transition-colors hover:bg-[color-mix(in_oklab,var(--border),transparent_75%)] md:grid md:grid-cols-[2fr_2fr_1fr_2fr_1fr] md:gap-6"
-              >
-                <div className="flex items-center justify-between gap-3 md:contents">
-                  <span className="min-w-0 break-words text-foreground font-medium">
-                    {startup.name}
+          {data.startups.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {data.startups.map((startup) => (
+                <Link
+                  key={startup.id}
+                  href={`/startups/${startup.id}`}
+                  className="flex min-w-0 flex-col gap-2 px-6 py-5 text-sm transition-colors hover:bg-[color-mix(in_oklab,var(--border),transparent_75%)] md:grid md:grid-cols-[2fr_2fr_1fr_2fr_1fr] md:gap-6"
+                >
+                  <div className="flex items-center justify-between gap-3 md:contents">
+                    <span className="min-w-0 break-words text-foreground font-medium">
+                      {startup.name}
+                    </span>
+                    <Badge
+                      className="md:hidden"
+                      variant={startup.health.tone}
+                    >
+                      {startup.health.label}
+                    </Badge>
+                  </div>
+                  <span className="min-w-0 break-words text-muted">
+                    {startup.sector}
                   </span>
-                  <Badge
-                    className="md:hidden"
-                    variant={startup.health.tone}
-                  >
-                    {startup.health.label}
-                  </Badge>
-                </div>
-                <span className="min-w-0 break-words text-muted">
-                  {startup.sector}
-                </span>
-                <span className="min-w-0 break-words text-muted">
-                  {startup.stage}
-                </span>
-                <span className="min-w-0 break-words text-muted">
-                  {startup.focus}
-                </span>
-                <span className="hidden md:inline-flex">
-                  <Badge variant={startup.health.tone}>
-                    {startup.health.label}
-                  </Badge>
-                </span>
-              </Link>
-            ))}
-          </div>
+                  <span className="min-w-0 break-words text-muted">
+                    {startup.stage}
+                  </span>
+                  <span className="min-w-0 break-words text-muted">
+                    {startup.focus}
+                  </span>
+                  <span className="hidden md:inline-flex">
+                    <Badge variant={startup.health.tone}>
+                      {startup.health.label}
+                    </Badge>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="px-6 py-8 text-sm text-muted">
+              Aucune startup enregistrée pour le moment.
+            </div>
+          )}
         </section>
       </main>
     </div>
