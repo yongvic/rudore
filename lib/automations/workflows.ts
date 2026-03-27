@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { runIngestion } from "@/lib/pipelines/ingest";
+import { callGemini } from "@/lib/services/gemini";
+import { sendResendEmail } from "@/lib/services/resend";
 
 type WorkflowContext = {
   workspaceId: string;
@@ -257,7 +259,12 @@ export async function runContentAutomationWorkflow({
   }
 
   const prompt = `Rédige un post LinkedIn premium pour ${startup.name} sur l'optimisation industrielle.`;
-  const response = `Post LinkedIn: ${startup.name} accélère la transformation des micro-usines africaines avec un focus sur la stabilité cashflow et la supply chain.`;
+  let response: string;
+  try {
+    response = await callGemini(prompt);
+  } catch {
+    response = `${startup.name} accélère les micro-usines africaines avec un focus sur la stabilité cashflow et la supply chain.`;
+  }
 
   await prisma.aiRun.create({
     data: {
@@ -280,6 +287,27 @@ export async function runContentAutomationWorkflow({
       occurredAt: new Date(),
     },
   });
+
+  try {
+    await sendResendEmail({
+      to: "marketing@rudore.africa",
+      subject: `SpeedMaker weekly post`,
+      html: `<h3>${startup.name} · Contenu AI</h3><p>${response.replace(
+        /\n/g,
+        "<br/>"
+      )}</p>`,
+    });
+  } catch (error) {
+    await prisma.activityEvent.create({
+      data: {
+        startupId: startup.id,
+        title: "Resend failure",
+        detail: error instanceof Error ? error.message : "Erreur Resend",
+        type: "Error",
+        occurredAt: new Date(),
+      },
+    });
+  }
 
   return {
     title: "Content automation exécuté",

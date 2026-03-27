@@ -39,6 +39,8 @@
 - Règles d’escalade (action dédiée) + schedule hebdo
 - Workflows métier (intelligence, monitoring, opportunités, alerting, contenu, talent)
 - Scheduler + priorités + retries
+- IA Gemini pour contenu + Resend pour diffusion email; configure weekly via builder (sélecteur `schedule.weekly`)
+- Variables: `GEMINI_API_KEY`, `GEMINI_ENDPOINT?`, `RESEND_API_KEY`, `CRON_SECRET`
 
 ## Phase 4 — Ecosystem Graph (à faire)
 - Graphe dynamique + édition des relations
