@@ -30,6 +30,7 @@
 1. `npm exec prisma db push`
 1. `npm run seed`
 1. `npm run dev`
+- Optionnel : `SEED_RESET=1 npm run seed` pour réinitialiser complètement les données si les droits DB le permettent.
 - **Data flow** : les Route Handlers interrogent Prisma → DTO typés → UI.
 - **Instructions Git** : tu restes sur la branche `features`, commit et push vers `origin features`, je gère la PR.
 

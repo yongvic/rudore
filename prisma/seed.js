@@ -11,24 +11,30 @@ async function safeDelete(fn) {
 }
 
 async function main() {
-  await safeDelete(() => prisma.workflowRun.deleteMany());
-  await safeDelete(() => prisma.automationWorkflow.deleteMany());
-  await safeDelete(() => prisma.alert.deleteMany());
-  await safeDelete(() => prisma.recommendation.deleteMany());
-  await safeDelete(() => prisma.insight.deleteMany());
-  await safeDelete(() => prisma.rawDocument.deleteMany());
-  await safeDelete(() => prisma.scrapeJob.deleteMany());
-  await safeDelete(() => prisma.dataSource.deleteMany());
-  await safeDelete(() => prisma.activityEvent.deleteMany());
-  await safeDelete(() => prisma.metric.deleteMany());
-  await safeDelete(() => prisma.startupMember.deleteMany());
-  await safeDelete(() => prisma.startup.deleteMany());
-  await safeDelete(() => prisma.ecosystemEdge.deleteMany());
-  await safeDelete(() => prisma.ecosystemNode.deleteMany());
-  await safeDelete(() => prisma.workspaceUser.deleteMany());
-  await safeDelete(() => prisma.aiRun.deleteMany());
-  await safeDelete(() => prisma.user.deleteMany());
-  await safeDelete(() => prisma.workspace.deleteMany());
+  const reset = process.env.SEED_RESET === "1";
+
+  if (reset) {
+    await safeDelete(() => prisma.workflowRun.deleteMany());
+    await safeDelete(() => prisma.automationWorkflow.deleteMany());
+    await safeDelete(() => prisma.alert.deleteMany());
+    await safeDelete(() => prisma.recommendation.deleteMany());
+    await safeDelete(() => prisma.insight.deleteMany());
+    await safeDelete(() => prisma.rawDocument.deleteMany());
+    await safeDelete(() => prisma.scrapeJob.deleteMany());
+    await safeDelete(() => prisma.dataSource.deleteMany());
+    await safeDelete(() => prisma.activityEvent.deleteMany());
+    await safeDelete(() => prisma.metric.deleteMany());
+    await safeDelete(() => prisma.startupMember.deleteMany());
+    await safeDelete(() => prisma.startup.deleteMany());
+    await safeDelete(() => prisma.ecosystemEdge.deleteMany());
+    await safeDelete(() => prisma.ecosystemNode.deleteMany());
+    await safeDelete(() => prisma.workspaceUser.deleteMany());
+    await safeDelete(() => prisma.aiRun.deleteMany());
+    await safeDelete(() => prisma.user.deleteMany());
+    await safeDelete(() => prisma.workspace.deleteMany());
+  } else {
+    console.log("seed> reset disabled (set SEED_RESET=1 to wipe data)");
+  }
 
   const workspace = await prisma.workspace.create({
     data: {

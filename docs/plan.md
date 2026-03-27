@@ -24,6 +24,7 @@
 
 ## 4. Étapes suivantes
 1. **Droits & seed** : obtenir un accès avec les permissions nécessaires ou intégrer des `upsert`/`migrations` pour que `seed.js` ne crashe pas sur `EPERM`. Rebuilder les données une fois possible.  
+1. **Reset contrôlé** : utiliser `SEED_RESET=1` uniquement si les droits `DELETE` sont disponibles, sinon seed en mode append.  
 2. **Pipeline ingestion** : déployer le scheduler (Playwright/Playwright) qui crée `ScrapeJob` & `RawDocument`, puis appeler les LLM pour générer `Insight`, `Alert`, `Recommendation`.  
 3. **Assistant IA interactif** : connecter les prompts de l’assistant à un vrai LLM (avec mémoire de conversations) et enrichir les suggestions (`lib/api-types`).  
 4. **Automations avancées** : ajouter builder visuel, triggers cross-startups, règles d’escalade prédictive (via `AutomationWorkflow` + `WorkflowRun`).  
