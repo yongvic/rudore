@@ -42,10 +42,10 @@
 - IA Gemini pour contenu + Resend pour diffusion email; configure weekly via builder (sélecteur `schedule.weekly`)
 - Variables: `GEMINI_API_KEY`, `GEMINI_ENDPOINT?`, `RESEND_API_KEY`, `CRON_SECRET`
 
-## Phase 4 — Ecosystem Graph (à faire)
-- Graphe dynamique + édition des relations
-- Score d’opportunité par relation
-- Suggestions IA de synergies
+## Phase 4 — Ecosystem Graph (en cours)
+- Snapshot dynamique (`lib/ecosystem/engine.ts`) + résumé Gemini
+- Suggestions de synergies et talents
+- UI enrichie (stats, résumé, cartes de suggestion)
 
 ## Phase 5 — Optimisation & Autonomie (à faire)
 - Performance, monitoring, sécurité avancée

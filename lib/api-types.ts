@@ -200,6 +200,18 @@ export type EcosystemRelationItem = {
 export type EcosystemResponse = {
   nodes: EcosystemNodeItem[];
   relations: EcosystemRelationItem[];
+  stats: {
+    nodeCount: number;
+    relationCount: number;
+    avgStrength: number;
+  };
+  suggestions: {
+    title: string;
+    detail: string;
+    tags?: string[];
+    type: "synergy" | "talent" | "opportunity";
+  }[];
+  summary: string;
 };
 
 export type SettingsItem = {
