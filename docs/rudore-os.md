@@ -1,14 +1,14 @@
 # Rudore OS — Dossier Produit & Architecture
 
-Ce document consolide l’état actuel et la suite à construire pour faire de Rudore OS une plateforme opérationnelle d’intelligence et d’exécution pour un Venture Studio panafricain.
+Ce document consolide l’état actuel et la suite à construire pour faire de Rudore OS une plateforme d’intelligence externe et d’automatisation stratégique pour un Venture Studio panafricain.
 
 ## 1. Concept produit détaillé
 
-**Vision.** Un “système nerveux” qui transforme des signaux externes et internes en décisions actionnables, puis en automatisations mesurables.
+**Vision.** Un “système nerveux” qui transforme des signaux **externes** en décisions actionnables, puis en automatisations mesurables.
 
-**Promesse.** Réduire le temps de décision stratégique, augmenter la précision des priorités, et orchestrer l’exécution cross-startups.
+**Promesse.** Réduire le temps de décision stratégique, augmenter la précision des priorités, et orchestrer l’exécution cross‑startups **sans gérer l’opérationnel interne**.
 
-**Valeur centrale.** Centraliser la vérité (data), prioriser par IA (insights), automatiser l’action (workflows), et capitaliser la mémoire stratégique.
+**Valeur centrale.** Centraliser la vérité (data externe), prioriser par IA (insights), automatiser l’action (workflows), et capitaliser la mémoire stratégique.
 
 **Boucles clés.** 
 - Collecte continue → analyse → recommandations → action → feedback → modèle amélioré.
@@ -27,11 +27,12 @@ Ce document consolide l’état actuel et la suite à construire pour faire de R
 ## 2. UX complet (écran par écran)
 
 1. **Tableau de bord global** — But: synthèse exécutable de l’écosystème. Sections: KPIs, alertes critiques, insights IA prioritaires, signaux marché, exécution automatisée. Actions: lancer un brief IA, explorer insights. États: normal, surcharge d’alertes, manque de signaux (empty state).
-1. **Portefeuille startups** — But: comparer et sélectionner une startup. Sections: liste filtrable, indicateurs clés, statut santé. Actions: ouvrir fiche, créer startup. États: portfolio vide, filtres actifs, tri par risque.
-1. **Fiche startup** — But: pilotage opérationnel d’une entité. Sections: métriques clés, timeline d’activités, recommandations IA, intelligence marché dédiée. Actions: exporter, ouvrir brief IA, escalader alerte. États: data incomplète, données divergentes, accès restreint.
+1. **Portefeuille startups** — But: comparer et sélectionner une startup **du point de vue externe**. Sections: liste filtrable, indicateurs clés, statut santé externe. Actions: ouvrir fiche, ajouter au suivi. États: portfolio vide, filtres actifs, tri par risque.
+1. **Fiche startup** — But: pilotage **externe** d’une entité. Sections: signaux externes, alertes, recommandations IA, tasks stratégiques, intelligence marché dédiée. Actions: ouvrir brief IA, escalader alerte. États: data incomplète, données divergentes.
 1. **Intelligence marché** — But: flux multi‑sources consolidé. Sections: filtres par startup, liste des signaux avec score et source. Actions: ajouter source, qualifier signal, créer alerte. États: aucune source active, flux saturé, signal critique.
 1. **Assistant IA** — But: requêtes stratégiques naturelles + mémoire. Sections: fil de conversation, contexte opérationnel, actions suggérées. Actions: lancer analyse, enregistrer insight, créer tâche. États: conversation vide, requête longue, réponse différée.
 1. **Automations** — But: orchestration d’actions récurrentes. Sections: workflows actifs, historique d’exécution. Actions: créer workflow, ouvrir builder, mettre en pause. États: workflow en échec, erreurs d’exécution, droits insuffisants.
+1. **Tasks** — But: exécuter les actions issues des insights. Sections: tâches globales et par startup, priorités, statut. Actions: assigner, clôturer, escalader.
 1. **Écosystème** — But: visualiser relations et synergies. Sections: graphe, relations prioritaires, opportunités de convergence. Actions: exporter la carte, créer relation, annoter lien. États: graphe partiel, incohérences de données.
 1. **Paramètres** — But: gouvernance et sécurité. Sections: rôles, sources, intégrations. Actions: ajouter utilisateur, connecter source, gérer droits. États: intégration défaillante, audit de permissions.
 
@@ -59,9 +60,9 @@ Ce document consolide l’état actuel et la suite à construire pour faire de R
 
 **Jobs asynchrones.** Un worker dédié exécute scraping, enrichissement, scoring, génération d’insights, et déclenchement d’alertes.
 
-**Sécurité.** NextAuth, RBAC par workspace et startup, audit des actions IA (journal d’exécution).
+**Sécurité.** NextAuth (à implémenter), RBAC par workspace et startup, audit des actions IA (journal d’exécution), guard API optionnel via `INTERNAL_API_TOKEN` + rate‑limit.
 
-**Data flow.** Sources → scraping → normalisation → stockage brut → extraction sémantique → insight → alerte/recommandation → automation → feedback.
+**Data flow.** Sources → scraping → normalisation → stockage brut → extraction sémantique → insight → alerte/recommandation → **task** → automation → feedback.
 
 ## 5. Prisma schema (état actuel)
 
@@ -74,6 +75,8 @@ Points forts:
 - Séparation insight/alerte/recommandation pour contrôle métier.
 - Graphe interne (`EcosystemNode`, `EcosystemEdge`) prêt pour la cartographie.
 - Mémoire IA (`AiRun`) pour audit et coût.
+- Tasks (`Task`) pour exécution tactique et priorisation.
+- Action logs (`ActionLog`) pour traçabilité JSON des actions IA.
 
 ## 6. Structure Next.js (état actuel + cible)
 
@@ -83,9 +86,12 @@ app/
     dashboard/
     startups/
       [startupId]/
+    tasks/
     intelligence/
     assistant/
     automations/
+    synergies/
+    studio/
     ecosystem/
     settings/
   layout.tsx
@@ -119,6 +125,7 @@ Extension cible:
 1. **Génération d’insights.** Création d’`Insight` relié à une startup ou global.
 1. **Déclenchement d’alertes.** Règles + seuils + priorisation.
 1. **Recommandations.** Rationale + action suggérée, stockée dans `Recommendation`.
+1. **Tasks.** Transformation des recommandations en actions suivies (`Task`).
 1. **Apprentissage.** Feedback utilisateur → ajustement de scoring.
 
 ## 8. Roadmap de développement

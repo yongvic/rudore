@@ -95,7 +95,7 @@ export function AiGovernance({ initialConfig, updatedAt }: Props) {
           </p>
           <p className="mt-1 text-xs text-muted">
             Ajustez les mots-clés et les pondérations pour calibrer le scoring
-            d'impact et d'urgence.
+            d&apos;impact et d&apos;urgence.
           </p>
         </div>
         <Badge variant="neutral">MAJ {lastUpdatedLabel}</Badge>

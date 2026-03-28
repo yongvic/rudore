@@ -27,11 +27,6 @@ export const triggerRegistry: AutomationTriggerDefinition[] = [
     defaultConfig: { severity: "CRITICAL" },
   },
   {
-    type: "metric.threshold",
-    label: "Seuil KPI",
-    defaultConfig: { metric: "MRR", operator: ">", value: 100000 },
-  },
-  {
     type: "schedule.weekly",
     label: "Récurrence hebdo",
     defaultConfig: { day: "Lundi", time: "07:00" },
@@ -40,6 +35,16 @@ export const triggerRegistry: AutomationTriggerDefinition[] = [
     type: "schedule.daily",
     label: "Récurrence quotidienne",
     defaultConfig: { time: "07:30" },
+  },
+  {
+    type: "cross-signal.created",
+    label: "Nouvelle synergie",
+    defaultConfig: { minStartups: 2 },
+  },
+  {
+    type: "blueprint.created",
+    label: "Nouveau blueprint",
+    defaultConfig: { minImpact: 70 },
   },
 ];
 
@@ -60,6 +65,16 @@ export const actionRegistry: AutomationActionDefinition[] = [
     defaultConfig: { action: "Analyser" },
   },
   {
+    type: "create.cross-signal",
+    label: "Créer une synergie",
+    defaultConfig: { mode: "scan" },
+  },
+  {
+    type: "create.blueprint",
+    label: "Créer un blueprint",
+    defaultConfig: { scope: "studio" },
+  },
+  {
     type: "notify.slack",
     label: "Notifier une équipe",
     defaultConfig: { channel: "#ops", messageTemplate: "Résumé auto" },
@@ -73,16 +88,6 @@ export const actionRegistry: AutomationActionDefinition[] = [
     type: "escalate.alert",
     label: "Escalader une alerte",
     defaultConfig: { to: "Managing Partner", channel: "Email" },
-  },
-  {
-    type: "generate.content",
-    label: "Générer contenu",
-    defaultConfig: { startup: "speedmaker", channel: "LinkedIn" },
-  },
-  {
-    type: "match.talent",
-    label: "Matcher talents",
-    defaultConfig: { focus: "LPT" },
   },
   {
     type: "run.workflows",

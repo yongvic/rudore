@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/db";
 import {
   formatConfidence,
-  formatEuro,
-  formatMonths,
   formatNumber,
 } from "@/lib/formatters";
 import { scoreAlert } from "@/lib/ranking";
@@ -33,56 +31,41 @@ const severityRank = {
 export async function GET() {
   const startups = await prisma.startup.findMany({
     include: {
-      metrics: true,
       alerts: { where: { status: "OPEN" }, orderBy: { severity: "desc" } },
       recos: { orderBy: { createdAt: "desc" }, take: 1 },
     },
   });
 
-  const runwayValues = startups
-    .flatMap((startup) => startup.metrics)
-    .filter((metric) => metric.name === "Runway")
-    .map((metric) => metric.value);
-
-  const avgRunway =
-    runwayValues.length > 0
-      ? runwayValues.reduce((acc, value) => acc + value, 0) /
-        runwayValues.length
-      : 0;
-
-  const arrTotal = startups.flatMap((startup) => startup.metrics).reduce(
-    (acc, metric) => {
-      if (metric.name === "ARR") return acc + metric.value;
-      if (metric.name === "MRR") return acc + metric.value * 12;
-      return acc;
-    },
-    0
-  );
-
-  const criticalAlerts = await prisma.alert.count({
-    where: { severity: "CRITICAL", status: "OPEN" },
-  });
+  const since30 = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30);
+  const since90 = new Date(Date.now() - 1000 * 60 * 60 * 24 * 90);
+  const [sourcesCount, insightCount, criticalAlerts, blueprintCount] =
+    await Promise.all([
+      prisma.dataSource.count(),
+      prisma.insight.count({ where: { createdAt: { gte: since30 } } }),
+      prisma.alert.count({ where: { severity: "CRITICAL", status: "OPEN" } }),
+      prisma.ventureBlueprint.count({ where: { createdAt: { gte: since90 } } }),
+    ]);
 
   const kpis = [
     {
-      label: "Startups actives",
-      value: formatNumber(startups.length, 0),
-      delta: "+1 ce trimestre",
+      label: "Sources actives",
+      value: formatNumber(sourcesCount, 0),
+      delta: "Flux externes",
     },
     {
-      label: "Runway moyen",
-      value: formatMonths(avgRunway),
-      delta: "Stable",
-    },
-    {
-      label: "ARR agrégé",
-      value: formatEuro(arrTotal),
-      delta: "+18%",
+      label: "Insights 30j",
+      value: formatNumber(insightCount, 0),
+      delta: "Derniers 30 jours",
     },
     {
       label: "Alertes critiques",
       value: formatNumber(criticalAlerts, 0),
-      delta: "2 nouvelles",
+      delta: "Open",
+    },
+    {
+      label: "Blueprints Studio",
+      value: formatNumber(blueprintCount, 0),
+      delta: "Opportunités",
     },
   ];
 
@@ -118,7 +101,7 @@ export async function GET() {
   const insightItems = insights.map((insight) => ({
     title: insight.title,
     summary: insight.summary,
-    confidence: formatConfidence(insight.confidence),
+    confidence: formatConfidence(insight.confidenceScore),
   }));
 
   const watchlist = startups.slice(0, 3).map((startup) => {
@@ -179,6 +162,13 @@ export async function GET() {
           : "warning",
   }));
 
+  const tasks = await prisma.task.findMany({
+    where: { status: { in: ["OPEN", "IN_PROGRESS"] }, priority: { in: ["HIGH", "CRITICAL"] } },
+    include: { startup: true },
+    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+    take: 4,
+  });
+
   return Response.json({
     kpis,
     alerts: alertItems,
@@ -186,5 +176,15 @@ export async function GET() {
     watchlist,
     marketSignals: marketItems,
     execution,
+    tasks: tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      detail: task.detail,
+      status: task.status,
+      priority: task.priority,
+      startup: task.startup?.name ?? null,
+      source: task.source ?? null,
+      createdAt: task.createdAt.toISOString(),
+    })),
   });
 }

@@ -4,10 +4,13 @@ import { cn } from "@/lib/cn";
 const variants = {
   neutral: "bg-[color-mix(in_oklab,var(--border),transparent_75%)] text-muted",
   accent: "bg-[color-mix(in_oklab,var(--accent),transparent_75%)] text-foreground",
+  secondary:
+    "bg-[color-mix(in_oklab,var(--border),transparent_55%)] text-foreground",
   success: "bg-[color-mix(in_oklab,var(--success),transparent_75%)] text-foreground",
   warning: "bg-[color-mix(in_oklab,var(--warning),transparent_75%)] text-foreground",
   danger: "bg-[color-mix(in_oklab,var(--danger),transparent_75%)] text-foreground",
   info: "bg-[color-mix(in_oklab,var(--info),transparent_75%)] text-foreground",
+  ghost: "border border-border/70 bg-transparent text-muted",
 };
 
 export function Badge({

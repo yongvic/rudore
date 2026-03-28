@@ -4,5 +4,5 @@ export const sourceProviderMap: Record<string, SourceProvider> = {
   Regulatory: "rss",
   Media: "rss",
   Trends: "rss",
-  Internal: "generic",
+  Research: "generic",
 };

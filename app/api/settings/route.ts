@@ -24,7 +24,7 @@ export async function GET() {
     },
     {
       title: "Sources de données",
-      detail: `${formatNumber(sourceCount, 0)} sources externes, 4 internes.`,
+      detail: `${formatNumber(sourceCount, 0)} sources externes actives.`,
     },
     {
       title: "Intégrations",

@@ -10,6 +10,7 @@ import {
   computeNextDailyRun,
   computeNextWeeklyRun,
 } from "@/lib/automations/schedule";
+import { guardApi } from "@/lib/api-guard";
 
 export async function GET() {
   const workflows = await prisma.automationWorkflow.findMany({
@@ -58,7 +59,13 @@ export async function GET() {
   return Response.json({ workflows: workflowItems, history: historyItems });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const guard = guardApi(request, {
+    requireAuth: true,
+    rateLimit: { limit: 10, windowMs: 60_000, keyPrefix: "automations-create" },
+  });
+  if (guard) return guard;
+
   const workspace = await prisma.workspace.findFirst({
     select: { id: true },
   });

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getActionLabel, getTriggerLabel } from "@/lib/automations/registry";
+import { getTriggerLabel } from "@/lib/automations/registry";
 import {
   computeNextDailyRun,
   computeNextWeeklyRun,

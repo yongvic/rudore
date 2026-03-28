@@ -9,7 +9,7 @@ export default function NotFound() {
           Ressource introuvable
         </h1>
         <p className="mt-3 text-sm text-muted">
-          La page demandée n'existe pas ou a été déplacée.
+          La page demandée n&apos;existe pas ou a été déplacée.
         </p>
         <Link
           href="/dashboard"

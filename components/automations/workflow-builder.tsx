@@ -233,10 +233,9 @@ export function WorkflowBuilder({ workflow }: Props) {
               <option value="custom">Custom</option>
               <option value="market-intelligence">Market intelligence</option>
               <option value="startup-monitoring">Startup monitoring</option>
-              <option value="opportunity-detection">Opportunity detection</option>
-              <option value="content-automation">Content automation</option>
+              <option value="studio-opportunity">Studio opportunity</option>
               <option value="alerting">Alerting</option>
-              <option value="talent-matching">Talent matching</option>
+              <option value="cross-intelligence">Cross-intelligence</option>
               <option value="automation-execution">Automation execution</option>
             </select>
           </label>

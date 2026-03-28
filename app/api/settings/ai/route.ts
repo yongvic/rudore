@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { defaultAiConfig, normalizeAiConfig, type AiScoringConfig } from "@/lib/ai-config";
+import { guardApi } from "@/lib/api-guard";
 
 export async function GET() {
   const workspace = await prisma.workspace.findFirst({
@@ -25,6 +26,12 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const guard = guardApi(request, {
+    requireAuth: true,
+    rateLimit: { limit: 20, windowMs: 60_000, keyPrefix: "ai-settings" },
+  });
+  if (guard) return guard;
+
   const workspace = await prisma.workspace.findFirst({
     select: { id: true },
   });
