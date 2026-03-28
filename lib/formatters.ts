@@ -41,11 +41,11 @@ export function formatMonths(value: number) {
 }
 
 export function formatConfidence(value: number) {
-  return formatNumber(value, 2).replace(".", ",");
+  return formatNumber(value, 0);
 }
 
 export function formatScore(value: number) {
-  return formatNumber(Math.round(value * 100), 0);
+  return formatNumber(Math.round(value), 0);
 }
 
 export function formatShortDate(date: Date) {

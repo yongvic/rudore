@@ -36,6 +36,20 @@ export type DashboardExecution = {
   tone: "success" | "warning" | "info";
 };
 
+export type TaskStatus = "OPEN" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type TaskItem = {
+  id: string;
+  title: string;
+  detail?: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  startup?: string | null;
+  source?: string | null;
+  createdAt: string;
+};
+
 export type DashboardResponse = {
   kpis: DashboardKpi[];
   alerts: DashboardAlert[];
@@ -43,6 +57,7 @@ export type DashboardResponse = {
   watchlist: DashboardWatchItem[];
   marketSignals: DashboardMarketSignal[];
   execution: DashboardExecution[];
+  tasks?: TaskItem[];
 };
 
 export type StartupHealth = {
@@ -63,16 +78,11 @@ export type StartupsResponse = {
   startups: StartupListItem[];
 };
 
-export type StartupMetric = {
-  label: string;
-  value: string;
-  delta: string;
-};
-
-export type StartupTimelineItem = {
+export type StartupAlert = {
   title: string;
-  date: string;
   detail: string;
+  tone: "warning" | "danger" | "info";
+  label: string;
 };
 
 export type StartupRecommendation = {
@@ -86,15 +96,22 @@ export type StartupIntelligenceItem = {
   tag: string;
 };
 
+export type StartupSynergyItem = {
+  title: string;
+  detail: string;
+  tags: string[];
+};
+
 export type StartupDetailResponse = {
   name: string;
   sector: string;
   stage: string;
   description: string;
-  metrics: StartupMetric[];
-  timeline: StartupTimelineItem[];
+  alerts: StartupAlert[];
   recommendations: StartupRecommendation[];
   intelligence: StartupIntelligenceItem[];
+  synergies: StartupSynergyItem[];
+  tasks: TaskItem[];
 };
 
 export type IntelligenceFilter = {
@@ -156,6 +173,34 @@ export type AutomationsResponse = {
   history: AutomationHistoryItem[];
 };
 
+export type TasksResponse = {
+  tasks: TaskItem[];
+  meta?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+};
+
+export type ActionLogItem = {
+  id: string;
+  type: string;
+  payload: Record<string, unknown>;
+  startup?: string | null;
+  createdAt: string;
+};
+
+export type ActionLogsResponse = {
+  logs: ActionLogItem[];
+  meta?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+};
+
 export type AutomationTrigger = {
   id: string;
   type: string;
@@ -190,11 +235,17 @@ export type EcosystemNodeItem = {
   label: string;
   x: string;
   y: string;
+  sector?: string;
+  tags?: string[];
 };
 
 export type EcosystemRelationItem = {
   title: string;
   detail: string;
+  strength?: number;
+  kind?: string;
+  fromId?: string;
+  toId?: string;
 };
 
 export type EcosystemResponse = {
@@ -214,6 +265,36 @@ export type EcosystemResponse = {
   summary: string;
 };
 
+export type CrossSignalItem = {
+  title: string;
+  summary: string;
+  startups: string[];
+  impactScore: number;
+  confidenceScore: number;
+  tags: string[];
+};
+
+export type CrossIntelligenceResponse = {
+  signals: CrossSignalItem[];
+  updatedAt: string | null;
+};
+
+export type VentureBlueprintItem = {
+  title: string;
+  problem: string;
+  solution: string;
+  targetMarket: string;
+  validationSignals: string[];
+  riskFactors: string[];
+  impactScore: number;
+  confidenceScore: number;
+  createdAt: string;
+};
+
+export type StudioResponse = {
+  blueprints: VentureBlueprintItem[];
+};
+
 export type SettingsItem = {
   title: string;
   detail: string;
@@ -221,6 +302,20 @@ export type SettingsItem = {
 
 export type SettingsResponse = {
   settings: SettingsItem[];
+};
+
+export type SourceItem = {
+  id: string;
+  name: string;
+  url: string;
+  rssUrl?: string | null;
+  type: string;
+  reliability: number;
+  createdAt: string;
+};
+
+export type SourcesResponse = {
+  sources: SourceItem[];
 };
 
 export type AiScoringConfig = {

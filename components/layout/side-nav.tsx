@@ -7,10 +7,14 @@ import { cn } from "@/lib/cn";
 const navItems = [
   { label: "Tableau de bord", href: "/dashboard" },
   { label: "Startups", href: "/startups" },
+  { label: "Tâches", href: "/tasks" },
   { label: "Intelligence", href: "/intelligence" },
+  { label: "Synergies", href: "/synergies" },
+  { label: "Studio", href: "/studio" },
   { label: "Assistant IA", href: "/assistant" },
   { label: "Automatisations", href: "/automations" },
   { label: "Écosystème", href: "/ecosystem" },
+  { label: "Journal IA", href: "/action-logs" },
   { label: "Paramètres", href: "/settings" },
 ];
 
@@ -62,7 +66,7 @@ export function SideNav() {
           4 signaux critiques
         </div>
         <p className="mt-2 text-sm text-muted">
-          Deux alertes marché, une dérive CAC, une opportunité secteur.
+          Deux alertes marché, une tension réglementaire, une opportunité sectorielle.
         </p>
       </div>
     </aside>

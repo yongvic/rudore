@@ -54,7 +54,7 @@ export function TopBar({
           Zone: Afrique francophone + Nigeria
         </span>
         <span className="rounded-full border border-border px-3 py-1">
-          Confiance IA: 0,82
+          Confiance IA: 82
         </span>
       </div>
     </header>

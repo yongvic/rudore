@@ -11,8 +11,8 @@ export default async function StartupsPage() {
     <div className="flex flex-1 flex-col">
       <TopBar
         title="Portefeuille startups"
-        description="Analysez chaque entité, ses métriques clés et les recommandations prioritaires."
-        actionLabel="Créer une startup"
+        description="Analysez chaque entité, ses signaux externes et les recommandations prioritaires."
+        actionLabel="Ajouter au suivi"
       />
 
       <main className="flex-1 px-8 py-10">

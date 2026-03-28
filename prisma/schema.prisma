@@ -53,6 +53,20 @@ enum AlertStatus {
   RESOLVED
 }
 
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 model Workspace {
   id        String   @id @default(cuid())
   name      String
@@ -70,6 +84,10 @@ model Workspace {
   ecosystemEdges EcosystemEdge[]
   aiRuns     AiRun[]
   aiConfigs  AiConfig[]
+  crossSignals CrossSignal[]
+  ventureBlueprints VentureBlueprint[]
+  tasks      Task[]
+  actionLogs ActionLog[]
 
   @@index([region])
 }
@@ -129,11 +147,11 @@ model Startup {
 
   workspace   Workspace    @relation(fields: [workspaceId], references: [id])
   members     StartupMember[]
-  metrics     Metric[]
-  activities  ActivityEvent[]
   insights    Insight[]
   alerts      Alert[]
   recos       Recommendation[]
+  tasks       Task[]
+  actionLogs  ActionLog[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -150,34 +168,6 @@ model StartupMember {
   user    User    @relation(fields: [userId], references: [id])
 
   @@unique([startupId, userId])
-  @@index([startupId])
-}
-
-model Metric {
-  id        String   @id @default(cuid())
-  startupId String
-  name      String
-  value     Float
-  unit      String
-  period    String
-  createdAt DateTime @default(now())
-
-  startup Startup @relation(fields: [startupId], references: [id])
-
-  @@index([startupId])
-}
-
-model ActivityEvent {
-  id         String   @id @default(cuid())
-  startupId  String
-  title      String
-  detail     String?
-  type       String
-  occurredAt DateTime
-  createdAt  DateTime @default(now())
-
-  startup Startup @relation(fields: [startupId], references: [id])
-
   @@index([startupId])
 }
 
@@ -238,16 +228,18 @@ model Insight {
   type       InsightType
   title      String
   summary    String
-  confidence Float
-  impactScore   Float      @default(0.5)
-  urgencyScore  Float      @default(0.5)
-  priorityScore Float      @default(0.5)
+  confidenceScore Float   @default(60)
+  impactScore   Float      @default(50)
+  urgencyScore  Float      @default(50)
+  priorityScore Float      @default(50)
+  meta      Json?
   createdAt  DateTime @default(now())
 
   startup  Startup?     @relation(fields: [startupId], references: [id])
   document RawDocument? @relation(fields: [documentId], references: [id])
   alerts   Alert[]
   recos    Recommendation[]
+  tasks    Task[]
 
   @@index([startupId])
 }
@@ -279,6 +271,7 @@ model Recommendation {
 
   startup Startup @relation(fields: [startupId], references: [id])
   insight Insight? @relation(fields: [insightId], references: [id])
+  tasks  Task[]
 
   @@index([startupId])
 }
@@ -379,6 +372,83 @@ model EcosystemEdge {
   workspace Workspace      @relation(fields: [workspaceId], references: [id])
   from      EcosystemNode  @relation("EdgeFrom", fields: [fromId], references: [id])
   to        EcosystemNode  @relation("EdgeTo", fields: [toId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model Task {
+  id               String       @id @default(cuid())
+  workspaceId      String
+  startupId        String?
+  insightId        String?
+  recommendationId String?
+  title            String
+  detail           String?
+  status           TaskStatus   @default(OPEN)
+  priority         TaskPriority @default(MEDIUM)
+  source           String?
+  meta             Json?
+  dueAt            DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  startup        Startup?        @relation(fields: [startupId], references: [id])
+  insight        Insight?        @relation(fields: [insightId], references: [id])
+  recommendation Recommendation? @relation(fields: [recommendationId], references: [id])
+
+  @@index([workspaceId])
+  @@index([startupId])
+  @@index([status])
+}
+
+model ActionLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  startupId   String?
+  type        String
+  payload     Json
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  startup   Startup?  @relation(fields: [startupId], references: [id])
+
+  @@index([workspaceId])
+  @@index([startupId])
+}
+
+model CrossSignal {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  title           String
+  summary         String
+  startupSlugs    String[]
+  insightIds      String[]
+  tags            String[] @default([])
+  impactScore     Float    @default(60)
+  confidenceScore Float    @default(70)
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model VentureBlueprint {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  title           String
+  problem         String
+  solution        String
+  targetMarket    String
+  validationSignals String[] @default([])
+  riskFactors     String[] @default([])
+  relatedInsights String[] @default([])
+  impactScore     Float    @default(65)
+  confidenceScore Float    @default(60)
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
 }

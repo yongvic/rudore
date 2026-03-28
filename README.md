@@ -1,8 +1,8 @@
 #  Rudore OS
 
-**Rudore OS** est une plateforme d’intelligence opérationnelle conçue pour transformer un Venture Studio en une machine autonome de création, d’analyse et de scaling de startups.
+**Rudore OS** est une couche d’intelligence externe conçue pour transformer un Venture Studio en une machine de veille stratégique, de décision et d’automatisation.
 
-Elle centralise la **veille stratégique**, l’**automatisation**, les **insights IA** et les **synergies entre startups** au sein d’une interface premium, rapide et orientée décision.
+Elle centralise la **veille multi‑sources**, l’**analyse IA**, les **insights exploitables**, les **recommandations**, les **tâches** et les **synergies inter‑startups** dans une interface premium, rapide et orientée décision.
 
 ---
 
@@ -32,12 +32,12 @@ C’est un **Operating System pour Venture Studio** qui permet de :
 
 ---
 
-###  Gestion des startups
+###  Startup Spaces (veille externe)
 
-* Vue centralisée (DoAsi, SpeedMaker, Miame, Koodi, LPT)
-* Santé et performance
-* Timeline d’activité
-* Recommandations intelligentes
+* Vue par startup (DoAsi, SpeedMaker, Miame, Koodi, LPT)
+* Veille dédiée (signaux externes)
+* Alertes et recommandations IA
+* Tâches stratégiques générées par workflows
 
 ---
 
@@ -56,6 +56,14 @@ C’est un **Operating System pour Venture Studio** qui permet de :
 * Suggestions stratégiques
 * Mémoire opérationnelle
 * Analyse en langage naturel
+
+---
+
+### ✅ Tasks System
+
+* Tâches générées par IA ou workflows
+* Priorisation (impact / urgence)
+* Suivi global et par startup
 
 ---
 
@@ -138,9 +146,11 @@ Le schéma Prisma inclut :
 * Insights
 * Alerts
 * Recommendations
+* Tasks
 * Automations
 * Ecosystem Graph
 * AI Runs
+* Action Logs
 
 ---
 
@@ -181,9 +191,16 @@ Le schéma Prisma inclut :
 | `/api/startups/[id]` | Détail startup          |
 | `/api/intelligence`  | Veille globale          |
 | `/api/assistant`     | IA + mémoire            |
+| `/api/tasks`         | Tâches stratégiques     |
 | `/api/automations`   | Workflows               |
+| `/api/cross-intelligence` | Synergies multi-startups |
+| `/api/studio`        | Venture Blueprints      |
 | `/api/ecosystem`     | Graphe relations        |
+| `/api/action-logs`   | Journal IA              |
 | `/api/settings`      | Configuration           |
+| `/api/sources`       | Sources externes        |
+| `/api/ingest/manual` | Ingestion text/URL      |
+| `/api/action-logs/export` | Export JSON journal IA |
 
 ---
 
@@ -205,6 +222,21 @@ npm run seed
 # Lancer le projet
 npm run dev
 ```
+
+---
+
+## 🔐 Sécurité API
+
+* `INTERNAL_API_TOKEN` (optionnel) protège les endpoints sensibles.
+* Header accepté: `Authorization: Bearer <token>` ou `x-api-token`.
+* Les requêtes same‑origin (basées sur `NEXTAUTH_URL` ou `APP_URL`) restent autorisées.
+* Rate limit configurable via `API_RATE_LIMIT` et `API_RATE_LIMIT_WINDOW_MS`.
+
+---
+
+## 🚀 Déploiement
+
+Voir `docs/deploy.md`.
 
 ---
 

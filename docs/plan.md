@@ -1,7 +1,7 @@
 # Plan d’action Rudore OS
 
 ## Avancement (estimation)
-- Global: 70% (Phases 0–3 terminées, Phase 4 en préparation)
+- Global: 72% (socle + intelligence opérationnelle en place, Tasks System & Startup Spaces en cours)
 
 ## Phase 0 — Socle produit (fait)
 - Design system validé (dark/light, palette, typo, principes UX)
@@ -16,7 +16,7 @@
 - États UX robustes (empty, error, loading)
 - Navigation stable et cohérence UI → API
 
-## Phase 2 — Intelligence opérationnelle (fait)
+## Phase 2 — Intelligence externe (fait)
 - Pipeline ingestion initial (`lib/pipelines/ingest.ts`)
 - Providers RSS + parsing minimal (`lib/pipelines/rss.ts`, `lib/pipelines/providers.ts`)
 - Support RSS/Atom + ciblage par `startupSlug`
@@ -25,6 +25,7 @@
 - Moteur de ranking (alertes + recommandations) basé sur priorité et fraîcheur
 - Pondération sectorielle & boost par type d’insight (RISK, MARKET, COMPETITOR)
 - Endpoint manuel `/api/ingest` pour déclencher l’ingestion
+- Endpoint text/URL `/api/ingest/manual` (signal externe direct)
 - Endpoint cron sécurisé `/api/ingest/cron` pour ingestion planifiée
 - Génération d’insights/alertes/recommandations à partir des sources
 - Déduplication simple via hash
@@ -42,12 +43,18 @@
 - IA Gemini pour contenu + Resend pour diffusion email; configure weekly via builder (sélecteur `schedule.weekly`)
 - Variables: `GEMINI_API_KEY`, `GEMINI_ENDPOINT?`, `RESEND_API_KEY`, `CRON_SECRET`
 
-## Phase 4 — Ecosystem Graph (en cours)
+## Phase 4 — Startup Spaces & Tasks (en cours)
+- Page détail startup (alertes, intelligence dédiée, recommandations, tâches)
+- Tasks System (modèle + API + UI globale)
+- Traçabilité d’actions IA (action logs JSON)
+
+## Phase 5 — Ecosystem Graph & Cross‑intelligence (en cours)
 - Snapshot dynamique (`lib/ecosystem/engine.ts`) + résumé Gemini
 - Suggestions de synergies et talents
 - UI enrichie (stats, résumé, cartes de suggestion)
+- Cross‑intelligence multi‑startups (`/synergies`)
 
-## Phase 5 — Optimisation & Autonomie (à faire)
+## Phase 6 — Optimisation & Autonomie (à faire)
 - Performance, monitoring, sécurité avancée
 - Simulation d’impact KPI
 - Automations semi-autonomes validées

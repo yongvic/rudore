@@ -17,6 +17,62 @@ export default async function IntelligencePage() {
       />
 
       <main className="flex-1 px-8 py-10">
+        <form
+          action="/api/ingest/manual"
+          method="post"
+          className="rounded-2xl border border-border/70 bg-surface/70 p-6"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                Import manuel
+              </p>
+              <p className="mt-2 text-sm text-foreground">
+                Ajoutez un signal externe (texte ou URL) pour générer un insight.
+              </p>
+            </div>
+            <Button size="sm" variant="secondary" type="submit">
+              Générer un insight
+            </Button>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <label className="text-xs uppercase tracking-[0.2em] text-muted">
+              Titre
+              <input
+                name="title"
+                required
+                className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none"
+                placeholder="Nouveau signal marché"
+              />
+            </label>
+            <label className="text-xs uppercase tracking-[0.2em] text-muted">
+              URL (optionnel)
+              <input
+                name="url"
+                className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none"
+                placeholder="https://source.com/article"
+              />
+            </label>
+            <label className="text-xs uppercase tracking-[0.2em] text-muted lg:col-span-2">
+              Résumé
+              <textarea
+                name="summary"
+                required
+                className="mt-2 min-h-[120px] w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none"
+                placeholder="Résumé du signal externe et impacts potentiels."
+              />
+            </label>
+            <label className="text-xs uppercase tracking-[0.2em] text-muted">
+              Startup (slug optionnel)
+              <input
+                name="startupSlug"
+                className="mt-2 w-full rounded-xl border border-border/60 bg-surface/80 px-3 py-2 text-sm text-foreground outline-none"
+                placeholder="doasi | koodi | miame"
+              />
+            </label>
+          </div>
+        </form>
+
         <section className="flex flex-wrap items-center gap-3">
           {filters.map((filter) => (
             <Button

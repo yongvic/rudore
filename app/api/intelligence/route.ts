@@ -26,13 +26,13 @@ export async function GET() {
   });
 
   const feed = insights.map((insight) => {
-    const impact = insight.impactScore ?? insight.confidence;
-    const urgency = insight.urgencyScore ?? insight.confidence;
-    const priority = insight.priorityScore ?? insight.confidence;
+    const impact = insight.impactScore ?? insight.confidenceScore;
+    const urgency = insight.urgencyScore ?? insight.confidenceScore;
+    const priority = insight.priorityScore ?? insight.confidenceScore;
     return {
       title: insight.title,
       summary: insight.summary,
-      source: insight.document?.job?.source?.name ?? "Signal interne",
+      source: insight.document?.job?.source?.name ?? "Signal externe",
       score: `Priorité ${formatScore(priority)} • Impact ${formatScore(
         impact
       )} • Urgence ${formatScore(urgency)}`,

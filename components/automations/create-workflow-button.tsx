@@ -17,7 +17,7 @@ export function CreateWorkflowButton() {
       if (data.id) {
         window.location.href = `/automations/builder/${data.id}`;
       }
-    } catch (error) {
+    } catch {
       setLoading(false);
     }
   }

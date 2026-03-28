@@ -6,12 +6,42 @@ import type { EcosystemResponse } from "@/lib/api-types";
 export default async function EcosystemPage() {
   const data = await apiGet<EcosystemResponse>("/api/ecosystem");
   const { nodes, relations, stats, suggestions, summary } = data;
+  const normalizedNodes = nodes.map((node) => {
+    const x = Number.isFinite(Number.parseFloat(node.x))
+      ? Math.min(95, Math.max(5, Number.parseFloat(node.x)))
+      : 50;
+    const y = Number.isFinite(Number.parseFloat(node.y))
+      ? Math.min(95, Math.max(5, Number.parseFloat(node.y)))
+      : 50;
+    return { ...node, xValue: x, yValue: y };
+  });
+  const nodePositions = new Map(
+    normalizedNodes.map((node) => [node.id, { x: node.xValue, y: node.yValue }])
+  );
+  const relationLines = relations.flatMap((relation) => {
+    if (!relation.fromId || !relation.toId) return [];
+    const from = nodePositions.get(relation.fromId);
+    const to = nodePositions.get(relation.toId);
+    if (!from || !to) return [];
+    const rawStrength = relation.strength ?? 0.55;
+    const strength = rawStrength > 1 ? rawStrength / 100 : rawStrength;
+    return [{ ...relation, from, to, strength }];
+  });
+  const avgStrengthLabel = Number.isFinite(stats.avgStrength)
+    ? `${Math.round((stats.avgStrength > 1 ? stats.avgStrength : stats.avgStrength * 100))}%`
+    : "0%";
+  const strengthTone = (value: number) => {
+    if (value >= 0.75) return "accent";
+    if (value >= 0.6) return "info";
+    if (value >= 0.45) return "warning";
+    return "neutral";
+  };
 
   return (
     <div className="flex flex-1 flex-col">
       <TopBar
         title="Graphe d'écosystème"
-        description="Cartographie dynamique des relations, talents et synergies du Venture Studio."
+        description="Cartographie dynamique des relations, acteurs et synergies externes du Venture Studio."
         actionLabel="Exporter la carte"
       />
 
@@ -44,7 +74,7 @@ export default async function EcosystemPage() {
                   Force moyenne
                 </p>
                 <p className="mt-1 text-xl font-semibold text-foreground">
-                  {stats.avgStrength.toFixed(2)}
+                  {avgStrengthLabel}
                 </p>
               </div>
               <div className="rounded-2xl border border-border/60 bg-surface/80 px-4 py-3">
@@ -57,29 +87,47 @@ export default async function EcosystemPage() {
               </div>
             </div>
             {nodes.length > 0 ? (
-              <div className="relative mt-6 h-[420px] w-full bg-grid">
+              <div className="relative mt-6 h-[420px] w-full overflow-hidden rounded-2xl border border-border/60 bg-grid">
                 <svg
                   className="absolute inset-0 h-full w-full"
                   viewBox="0 0 100 100"
                   preserveAspectRatio="none"
                   aria-hidden
                 >
-                  <line x1="15" y1="30" x2="45" y2="20" stroke="var(--border)" strokeWidth="0.4" />
-                  <line x1="45" y1="20" x2="70" y2="35" stroke="var(--border)" strokeWidth="0.4" />
-                  <line x1="45" y1="20" x2="30" y2="65" stroke="var(--border)" strokeWidth="0.4" />
-                  <line x1="30" y1="65" x2="65" y2="70" stroke="var(--border)" strokeWidth="0.4" />
-                  <line x1="15" y1="30" x2="65" y2="70" stroke="var(--border)" strokeWidth="0.4" />
+                  {relationLines.map((relation) => (
+                    <line
+                      key={`${relation.fromId}-${relation.toId}-${relation.title}`}
+                      x1={relation.from.x}
+                      y1={relation.from.y}
+                      x2={relation.to.x}
+                      y2={relation.to.y}
+                      stroke="var(--border)"
+                      strokeWidth={0.4 + relation.strength * 1.2}
+                      strokeOpacity={0.25 + relation.strength * 0.55}
+                      strokeDasharray={relation.kind === "derived" ? "2 2" : undefined}
+                    />
+                  ))}
                 </svg>
-                {nodes.map((node) => (
+                {normalizedNodes.map((node) => (
                   <div
                     key={node.id}
-                    className="absolute flex flex-col items-start gap-2"
-                    style={{ left: node.x, top: node.y }}
+                    className="absolute z-10 flex flex-col items-start gap-2"
+                    style={{ left: `${node.xValue}%`, top: `${node.yValue}%` }}
+                    title={
+                      node.tags?.length
+                        ? `${node.label} · ${node.tags.join(", ")}`
+                        : node.label
+                    }
                   >
-                    <span className="h-3 w-3 rounded-full bg-accent" />
+                    <span className="h-3 w-3 rounded-full bg-accent shadow-[0_0_0_4px_rgba(252,83,42,0.15)]" />
                     <span className="max-w-[120px] break-words text-xs text-foreground">
                       {node.label}
                     </span>
+                    {node.sector ? (
+                      <span className="text-[10px] uppercase tracking-[0.25em] text-muted">
+                        {node.sector}
+                      </span>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -107,6 +155,30 @@ export default async function EcosystemPage() {
                     <p className="mt-2 break-words text-sm text-muted">
                       {item.detail}
                     </p>
+                    {(item.kind || item.strength !== undefined) && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {item.kind ? (
+                          <Badge variant="ghost">{item.kind}</Badge>
+                        ) : null}
+                        {item.strength !== undefined ? (
+                          <Badge
+                            variant={strengthTone(
+                              item.strength > 1
+                                ? item.strength / 100
+                                : item.strength
+                            )}
+                          >
+                            Force{" "}
+                            {Math.round(
+                              (item.strength > 1
+                                ? item.strength / 100
+                                : item.strength) * 100
+                            )}
+                            %
+                          </Badge>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -126,7 +198,7 @@ export default async function EcosystemPage() {
                     className="rounded-xl border border-border/60 bg-surface/80 p-4 transition hover:border-accent/70"
                   >
                     <p className="text-xs uppercase tracking-[0.3em] text-muted">
-                      {suggestion.type === "talent" ? "Talent" : "Synergie"}
+                      {suggestion.type === "opportunity" ? "Opportunité" : "Synergie"}
                     </p>
                     <p className="mt-1 text-sm font-medium text-foreground">
                       {suggestion.title}

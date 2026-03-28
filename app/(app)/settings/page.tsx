@@ -1,12 +1,18 @@
 import { TopBar } from "@/components/layout/top-bar";
 import { Badge } from "@/components/ui/badge";
 import { AiGovernance } from "@/components/settings/ai-governance";
+import { SourcesManager } from "@/components/settings/sources-manager";
 import { apiGet } from "@/lib/api";
-import type { AiSettingsResponse, SettingsResponse } from "@/lib/api-types";
+import type {
+  AiSettingsResponse,
+  SettingsResponse,
+  SourcesResponse,
+} from "@/lib/api-types";
 
 export default async function SettingsPage() {
   const data = await apiGet<SettingsResponse>("/api/settings");
   const aiData = await apiGet<AiSettingsResponse>("/api/settings/ai");
+  const sourcesData = await apiGet<SourcesResponse>("/api/sources");
 
   return (
     <div className="flex flex-1 flex-col">
@@ -51,6 +57,10 @@ export default async function SettingsPage() {
             initialConfig={aiData.config}
             updatedAt={aiData.updatedAt}
           />
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
+          <SourcesManager initialSources={sourcesData.sources} />
         </section>
       </main>
     </div>

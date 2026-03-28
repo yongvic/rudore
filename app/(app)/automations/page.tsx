@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TopBar } from "@/components/layout/top-bar";
 import { Badge } from "@/components/ui/badge";
 import { CreateWorkflowButton } from "@/components/automations/create-workflow-button";
@@ -11,8 +12,8 @@ export default async function AutomationsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <TopBar
-        title="Moteur d'automatisation"
-        description="Construisez des workflows intelligents pour orchestrer l'exécution."
+        title="Moteur d&apos;automatisation"
+        description="Construisez des workflows intelligents pour orchestrer l&apos;exécution."
       />
 
       <main className="flex-1 px-8 py-10">
@@ -23,12 +24,12 @@ export default async function AutomationsPage() {
             </h2>
             <div className="flex items-center gap-2">
               <CreateWorkflowButton />
-              <a
+              <Link
                 href="/automations/builder"
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-transparent bg-transparent px-3 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-[color-mix(in_oklab,var(--border),transparent_55%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 Voir le builder
-              </a>
+              </Link>
             </div>
           </div>
           {workflows.length > 0 ? (
@@ -40,7 +41,7 @@ export default async function AutomationsPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex min-w-0 flex-col">
-                      <a
+                      <Link
                         href={
                           workflow.id
                             ? `/automations/builder/${workflow.id}`
@@ -49,7 +50,7 @@ export default async function AutomationsPage() {
                         className="min-w-0 break-words text-sm font-medium text-foreground hover:underline"
                       >
                         {workflow.name}
-                      </a>
+                      </Link>
                       {workflow.lastRun ? (
                         <span className="text-xs text-muted">
                           Dernière exécution: {workflow.lastRun}
@@ -78,7 +79,7 @@ export default async function AutomationsPage() {
 
         <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
           <h2 className="text-lg font-semibold text-foreground font-display">
-            Historique d'exécution
+            Historique d&apos;exécution
           </h2>
           {history.length > 0 ? (
             <div className="mt-6 space-y-4">
@@ -107,7 +108,7 @@ export default async function AutomationsPage() {
             </div>
           ) : (
             <p className="mt-6 text-sm text-muted">
-              Aucun historique d’exécution disponible.
+              Aucun historique d&apos;exécution disponible.
             </p>
           )}
         </section>

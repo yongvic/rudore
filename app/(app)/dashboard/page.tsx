@@ -1,12 +1,22 @@
 ﻿import { TopBar } from "@/components/layout/top-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DashboardTasksPanel } from "@/components/tasks/dashboard-tasks-panel";
 import { apiGet } from "@/lib/api";
-import type { DashboardResponse } from "@/lib/api-types";
+import type { DashboardResponse, StartupsResponse } from "@/lib/api-types";
 
 export default async function DashboardPage() {
   const data = await apiGet<DashboardResponse>("/api/dashboard");
-  const { kpis, alerts, insights, watchlist, marketSignals, execution } = data;
+  const {
+    kpis,
+    alerts,
+    insights,
+    watchlist,
+    marketSignals,
+    execution,
+    tasks = [],
+  } = data;
+  const startups = await apiGet<StartupsResponse>("/api/startups");
 
   return (
     <div className="flex flex-1 flex-col">
@@ -167,6 +177,22 @@ export default async function DashboardPage() {
             )}
           </section>
         </div>
+
+        <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground font-display">
+              Tâches prioritaires
+            </h2>
+            <Badge variant="accent">{tasks.length} en attente</Badge>
+          </div>
+          <DashboardTasksPanel
+            initialTasks={tasks}
+            startups={startups.startups.map((startup) => ({
+              slug: startup.id,
+              name: startup.name,
+            }))}
+          />
+        </section>
 
         <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
           <div className="flex items-center justify-between">

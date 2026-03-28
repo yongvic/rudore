@@ -33,9 +33,9 @@ export async function GET() {
   ];
 
   const suggestions = [
-    "Comparer DoAsi vs cohortes 2024",
+    "Comparer DoAsi vs signaux diaspora",
     "Générer un brief pour le board",
-    "Simuler l'impact d'une baisse CAC",
+    "Évaluer l'impact d'une régulation USSD",
   ];
 
   return Response.json({ conversation, context, suggestions });

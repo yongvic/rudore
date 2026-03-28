@@ -5,6 +5,7 @@ import {
   computeNextDailyRun,
   computeNextWeeklyRun,
 } from "@/lib/automations/schedule";
+import { guardApi } from "@/lib/api-guard";
 
 const workflowSchema = z.object({
   name: z.string().min(2),
@@ -85,6 +86,12 @@ export async function PUT(
   request: Request,
   context: { params: Promise<{ workflowId: string }> }
 ) {
+  const guard = guardApi(request, {
+    requireAuth: true,
+    rateLimit: { limit: 20, windowMs: 60_000, keyPrefix: "automations-update" },
+  });
+  if (guard) return guard;
+
   const { workflowId } = await context.params;
   const payload = await request.json().catch(() => null);
   const parsed = workflowSchema.safeParse(payload);

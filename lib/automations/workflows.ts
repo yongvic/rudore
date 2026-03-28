@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { runIngestion } from "@/lib/pipelines/ingest";
 import { callGemini } from "@/lib/services/gemini";
-import { sendResendEmail } from "@/lib/services/resend";
+import { logAction } from "@/lib/action-log";
 
 type WorkflowContext = {
   workspaceId: string;
@@ -19,90 +19,41 @@ function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
 
-function computeHealthScore(metrics: Array<{ name: string; value: number }>) {
-  let score = 70;
-  const metric = (name: string) => metrics.find((m) => m.name === name)?.value;
-  const runway = metric("Runway");
-  const churn = metric("Churn");
-  const mrr = metric("MRR");
-  const arr = metric("ARR");
-
-  if (runway !== undefined) {
-    if (runway < 6) score -= 25;
-    else if (runway < 9) score -= 15;
-    else if (runway > 15) score += 8;
-  }
-
-  if (churn !== undefined) {
-    if (churn > 8) score -= 20;
-    else if (churn > 5) score -= 12;
-    else if (churn < 3) score += 6;
-  }
-
-  if (mrr !== undefined) {
-    if (mrr > 150000) score += 8;
-    else if (mrr < 50000) score -= 8;
-  }
-
-  if (arr !== undefined) {
-    if (arr > 1000000) score += 6;
-  }
-
-  return clamp(score);
+function priorityFromImpact(impactScore: number) {
+  if (impactScore >= 85) return "CRITICAL";
+  if (impactScore >= 70) return "HIGH";
+  if (impactScore >= 55) return "MEDIUM";
+  return "LOW";
 }
 
-async function createInsightBundle({
-  startupId,
-  type,
-  title,
-  summary,
-  confidence,
+const alertSeverityScore = {
+  LOW: 35,
+  MEDIUM: 55,
+  HIGH: 75,
+  CRITICAL: 95,
+};
+
+function computeSignalPressure({
+  alerts,
+  insights,
 }: {
-  startupId: string | null;
-  type: "MARKET" | "COMPETITOR" | "TREND" | "RISK" | "OPPORTUNITY";
-  title: string;
-  summary: string;
-  confidence: number;
+  alerts: Array<{ severity: keyof typeof alertSeverityScore }>;
+  insights: Array<{ priorityScore?: number | null; confidenceScore?: number | null }>;
 }) {
-  const insight = await prisma.insight.create({
-    data: {
-      startupId,
-      type,
-      title,
-      summary,
-      confidence,
-      impactScore: confidence,
-      urgencyScore: confidence,
-      priorityScore: confidence,
-    },
-  });
-
-  let alert = null;
-  if (type === "RISK" || type === "MARKET" || type === "COMPETITOR") {
-    alert = await prisma.alert.create({
-      data: {
-        startupId,
-        insightId: insight.id,
-        title: `Alerte: ${title}`,
-        severity: confidence > 0.8 ? "CRITICAL" : confidence > 0.65 ? "HIGH" : "MEDIUM",
-        status: "OPEN",
-      },
-    });
-  }
-
-  const recommendation = startupId
-    ? await prisma.recommendation.create({
-        data: {
-          startupId,
-          insightId: insight.id,
-          title: "Action recommandée",
-          rationale: summary,
-          action: "Analyser et planifier une réponse",
-        },
-      })
-    : null;
-
-  return { insight, alert, recommendation };
+  const alertScore =
+    alerts.length === 0
+      ? 45
+      : alerts.reduce((acc, alert) => acc + alertSeverityScore[alert.severity], 0) /
+        alerts.length;
+  const insightScore =
+    insights.length === 0
+      ? 50
+      : insights.reduce(
+          (acc, insight) => acc + (insight.priorityScore ?? insight.confidenceScore ?? 50),
+          0
+        ) / insights.length;
+  const pressure = clamp(alertScore * 0.6 + insightScore * 0.4);
+  return { pressure, alertScore, insightScore };
 }
 
 export async function runMarketIntelligenceWorkflow({
@@ -122,6 +73,11 @@ export async function runMarketIntelligenceWorkflow({
       costUsd: 0,
     },
   });
+  await logAction({
+    workspaceId,
+    type: "workflow.market-intelligence",
+    payload: result,
+  });
   return {
     title: "Market intelligence exécuté",
     detail: `${result.sources} sources, ${result.documents} documents, ${result.insights} insights.`,
@@ -132,55 +88,110 @@ export async function runMarketIntelligenceWorkflow({
 export async function runStartupMonitoringWorkflow({
   workspaceId,
 }: WorkflowContext): Promise<WorkflowResult> {
+  const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 21);
   const startups = await prisma.startup.findMany({
     where: { workspaceId },
-    include: { metrics: true },
+    include: {
+      alerts: { where: { status: "OPEN" }, orderBy: { createdAt: "desc" } },
+      insights: { where: { createdAt: { gte: since } }, orderBy: { createdAt: "desc" } },
+    },
   });
 
   let alerts = 0;
   for (const startup of startups) {
-    const score = computeHealthScore(startup.metrics);
-    const type = score < 60 ? "RISK" : score > 80 ? "OPPORTUNITY" : "TREND";
-    const summary = `Score santé: ${score}/100.`;
+    if (startup.alerts.length === 0 && startup.insights.length === 0) {
+      continue;
+    }
+    const { pressure, alertScore, insightScore } = computeSignalPressure({
+      alerts: startup.alerts,
+      insights: startup.insights,
+    });
+    const type = pressure > 75 ? "RISK" : pressure < 45 ? "OPPORTUNITY" : "TREND";
+    const summary = `Pression signaux externes: ${Math.round(
+      pressure
+    )}/100. Alertes: ${Math.round(alertScore)} · Insights: ${Math.round(
+      insightScore
+    )}.`;
 
     const insight = await prisma.insight.create({
       data: {
         startupId: startup.id,
         type,
-        title: `Monitoring ${startup.name}`,
+        title: `Monitoring externe ${startup.name}`,
         summary,
-        confidence: score / 100,
-        impactScore: score / 100,
-        urgencyScore: type === "RISK" ? 0.8 : 0.5,
-        priorityScore: score / 100,
+        confidenceScore: clamp(60 + (pressure - 50) * 0.4),
+        impactScore: pressure,
+        urgencyScore: clamp(type === "RISK" ? alertScore + 8 : alertScore - 5),
+        priorityScore: pressure,
+        meta: {
+          source: "workflow:startup-monitoring",
+          pressure,
+          alertScore,
+          insightScore,
+        },
+      },
+    });
+    await logAction({
+      workspaceId,
+      startupId: startup.id,
+      type: "insight.monitoring",
+      payload: {
+        insightId: insight.id,
+        pressure,
+        alertScore,
+        insightScore,
       },
     });
 
-    if (score < 60) {
+    if (type === "RISK" && pressure > 75) {
       await prisma.alert.create({
         data: {
           startupId: startup.id,
           insightId: insight.id,
-          title: `Risque KPI ${startup.name}`,
-          severity: score < 45 ? "CRITICAL" : "HIGH",
+          title: `Signal critique ${startup.name}`,
+          severity: pressure > 85 ? "CRITICAL" : "HIGH",
           status: "OPEN",
         },
       });
       alerts += 1;
     }
 
-    await prisma.recommendation.create({
-      data: {
+    if (insight.impactScore > 70) {
+      const recommendation = await prisma.recommendation.create({
+        data: {
+          startupId: startup.id,
+          insightId: insight.id,
+          title:
+            type === "RISK" ? "Plan de mitigation externe" : "Accélérer la veille ciblée",
+          rationale: summary,
+          action:
+            type === "RISK"
+              ? "Activer une cellule de réponse externe"
+              : "Renforcer les sources sectorielles",
+        },
+      });
+
+      const task = await prisma.task.create({
+        data: {
+          workspaceId,
+          startupId: startup.id,
+          insightId: insight.id,
+          recommendationId: recommendation.id,
+          title: recommendation.title,
+          detail: recommendation.action,
+          status: "OPEN",
+          priority: priorityFromImpact(insight.impactScore),
+          source: "workflow:startup-monitoring",
+          meta: { pressure },
+        },
+      });
+      await logAction({
+        workspaceId,
         startupId: startup.id,
-        insightId: insight.id,
-        title: score < 60 ? "Plan de redressement" : "Accélérer la croissance",
-        rationale: summary,
-        action:
-          score < 60
-            ? "Réviser plan d'action 30 jours"
-            : "Investir sur les canaux performants",
-      },
-    });
+        type: "task.created",
+        payload: { taskId: task.id, title: task.title, priority: task.priority },
+      });
+    }
   }
 
   return {
@@ -204,6 +215,8 @@ export async function runOpportunityDetectionWorkflow({
     insights.length > 0
       ? `Analyse globale: ${insights.length} signaux convergent vers ${headline}.`
       : "Pas assez de signaux pour détecter une opportunité claire.";
+  const baseImpact = insights[0]?.impactScore ?? 68;
+  const baseConfidence = insights[0]?.confidenceScore ?? 62;
 
   await prisma.aiRun.create({
     data: {
@@ -217,26 +230,99 @@ export async function runOpportunityDetectionWorkflow({
     },
   });
 
-  await prisma.insight.create({
-    data: {
-      startupId: null,
-      type: "OPPORTUNITY",
-      title: "Opportunity Radar",
-      summary,
-      confidence: insights.length > 0 ? 0.7 : 0.5,
-      impactScore: insights.length > 0 ? 0.75 : 0.5,
-      urgencyScore: insights.length > 0 ? 0.6 : 0.4,
-      priorityScore: insights.length > 0 ? 0.7 : 0.5,
-    },
-  });
+  const opportunityInsight =
+    insights.length > 0
+      ? await prisma.insight.create({
+          data: {
+            startupId: null,
+            type: "OPPORTUNITY",
+            title: "Opportunity Radar",
+            summary,
+            confidenceScore: clamp(baseConfidence),
+            impactScore: clamp(baseImpact),
+            urgencyScore: clamp(baseImpact - 5),
+            priorityScore: clamp(baseImpact),
+            meta: {
+              source: "workflow:opportunity-detection",
+              headline,
+              signalCount: insights.length,
+            },
+          },
+        })
+      : null;
 
-  if (insights[0]?.startupId) {
-    await prisma.recommendation.create({
+  if (insights.length > 0) {
+    const blueprintTitle = `Blueprint: ${headline}`;
+    let blueprintSummary = summary;
+    try {
+      blueprintSummary = await callGemini(
+        `Résume en 3 phrases une opportunité startup basée sur: ${summary}`
+      );
+    } catch {
+      // fallback
+    }
+
+    const blueprint = await prisma.ventureBlueprint.create({
+      data: {
+        workspaceId,
+        title: blueprintTitle,
+        problem: blueprintSummary,
+        solution:
+          "Plateforme d'intelligence transversale pour convertir signaux en décisions.",
+        targetMarket: "Venture studios, fintechs, plateformes impact en Afrique.",
+        validationSignals: [headline, "Signaux convergents sur 14 jours"],
+        riskFactors: ["Dépendance aux sources externes", "Cycles réglementaires"],
+        relatedInsights: insights.slice(0, 4).map((item) => item.id),
+        impactScore: clamp(baseImpact),
+        confidenceScore: clamp(baseConfidence),
+      },
+    });
+
+    await logAction({
+      workspaceId,
+      type: "studio.blueprint",
+      payload: {
+        blueprintId: blueprint.id,
+        title: blueprint.title,
+        impactScore: blueprint.impactScore,
+      },
+    });
+
+    await prisma.task.create({
+      data: {
+        workspaceId,
+        title: `Valider ${blueprint.title}`,
+        detail: "Qualifier le potentiel marché et définir les prochains tests.",
+        status: "OPEN",
+        priority: priorityFromImpact(baseImpact),
+        source: "studio",
+        meta: { blueprintId: blueprint.id },
+      },
+    });
+  }
+
+  if (insights[0]?.startupId && baseImpact > 70 && opportunityInsight) {
+    const recommendation = await prisma.recommendation.create({
       data: {
         startupId: insights[0].startupId,
+        insightId: opportunityInsight.id,
         title: "Valider une nouvelle opportunité",
         rationale: summary,
         action: "Lancer une étude de marché ciblée",
+      },
+    });
+
+    await prisma.task.create({
+      data: {
+        workspaceId,
+        startupId: insights[0].startupId,
+        insightId: opportunityInsight.id,
+        recommendationId: recommendation.id,
+        title: recommendation.title,
+        detail: recommendation.action,
+        status: "OPEN",
+        priority: priorityFromImpact(baseImpact),
+        source: "studio",
       },
     });
   }
@@ -247,76 +333,91 @@ export async function runOpportunityDetectionWorkflow({
   };
 }
 
-export async function runContentAutomationWorkflow({
+export async function runCrossIntelligenceWorkflow({
   workspaceId,
 }: WorkflowContext): Promise<WorkflowResult> {
-  const startup = await prisma.startup.findFirst({
-    where: { workspaceId, slug: "speedmaker" },
+  const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 14);
+  const insights = await prisma.insight.findMany({
+    where: { createdAt: { gte: since } },
+    include: { startup: true, document: true },
+    orderBy: { createdAt: "desc" },
+    take: 30,
   });
 
-  if (!startup) {
-    return { title: "Content automation", detail: "Startup SpeedMaker introuvable." };
+  const grouped = new Map<
+    string,
+    {
+      title: string;
+      summary: string;
+      startupSlugs: Set<string>;
+      insightIds: Set<string>;
+      impactScores: number[];
+      confidenceScores: number[];
+    }
+  >();
+
+  for (const insight of insights) {
+    const tags = (insight.document?.tags as string[] | undefined) ?? [];
+    const startupSlug = insight.startup?.slug;
+    for (const tag of tags.slice(0, 2)) {
+      if (!grouped.has(tag)) {
+        grouped.set(tag, {
+          title: `Synergie détectée: ${tag}`,
+          summary: `Signaux transverses autour du thème "${tag}".`,
+          startupSlugs: new Set<string>(),
+          insightIds: new Set<string>(),
+          impactScores: [],
+          confidenceScores: [],
+        });
+      }
+      const entry = grouped.get(tag);
+      if (!entry) continue;
+      if (startupSlug) entry.startupSlugs.add(startupSlug);
+      entry.insightIds.add(insight.id);
+      entry.impactScores.push(insight.impactScore ?? 60);
+      entry.confidenceScores.push(insight.confidenceScore ?? 60);
+    }
   }
 
-  const prompt = `Rédige un post LinkedIn premium pour ${startup.name} sur l'optimisation industrielle.`;
-  let response: string;
-  try {
-    response = await callGemini(prompt);
-  } catch {
-    response = `${startup.name} accélère les micro-usines africaines avec un focus sur la stabilité cashflow et la supply chain.`;
-  }
+  let created = 0;
+  for (const [tag, entry] of grouped.entries()) {
+    if (entry.startupSlugs.size < 2) continue;
+    const impact =
+      entry.impactScores.reduce((acc, value) => acc + value, 0) /
+      entry.impactScores.length;
+    const confidence =
+      entry.confidenceScores.reduce((acc, value) => acc + value, 0) /
+      entry.confidenceScores.length;
 
-  await prisma.aiRun.create({
-    data: {
-      workspaceId,
-      model: "simulated-gpt",
-      prompt,
-      response,
-      tokensIn: prompt.split(" ").length,
-      tokensOut: response.split(" ").length,
-      costUsd: 0,
-    },
-  });
-
-  await prisma.activityEvent.create({
-    data: {
-      startupId: startup.id,
-      title: "Contenu généré",
-      detail: response,
-      type: "Content",
-      occurredAt: new Date(),
-    },
-  });
-
-  try {
-    await sendResendEmail({
-      to: "marketing@rudore.africa",
-      subject: `SpeedMaker weekly post`,
-      html: `<h3>${startup.name} · Contenu AI</h3><p>${response.replace(
-        /\n/g,
-        "<br/>"
-      )}</p>`,
-    });
-  } catch (error) {
-    await prisma.activityEvent.create({
+    await prisma.crossSignal.create({
       data: {
-        startupId: startup.id,
-        title: "Resend failure",
-        detail: error instanceof Error ? error.message : "Erreur Resend",
-        type: "Error",
-        occurredAt: new Date(),
+        workspaceId,
+        title: entry.title,
+        summary: entry.summary,
+        startupSlugs: Array.from(entry.startupSlugs),
+        insightIds: Array.from(entry.insightIds),
+        tags: [tag],
+        impactScore: clamp(impact),
+        confidenceScore: clamp(confidence),
       },
     });
+    created += 1;
   }
 
+  await logAction({
+    workspaceId,
+    type: "cross-intelligence",
+    payload: { created },
+  });
+
   return {
-    title: "Content automation exécuté",
-    detail: "1 contenu généré pour SpeedMaker.",
+    title: "Cross-intelligence exécuté",
+    detail: `${created} synergies générées.`,
+    meta: { created },
   };
 }
 
 export async function runAlertingWorkflow({
-  workspaceId,
   alertId,
 }: WorkflowContext): Promise<WorkflowResult> {
   const alerts = alertId
@@ -334,23 +435,11 @@ export async function runAlertingWorkflow({
   let notified = 0;
   for (const alert of alerts) {
     const severity =
-      (alert.insight?.priorityScore ?? 0) > 0.85 ? "CRITICAL" : alert.severity;
+      (alert.insight?.priorityScore ?? 0) > 85 ? "CRITICAL" : alert.severity;
     if (severity !== alert.severity) {
       await prisma.alert.update({
         where: { id: alert.id },
         data: { severity },
-      });
-    }
-
-    if (alert.startupId) {
-      await prisma.activityEvent.create({
-        data: {
-          startupId: alert.startupId,
-          title: "Notification envoyée",
-          detail: `${alert.title} · ${severity}`,
-          type: "Alert",
-          occurredAt: new Date(),
-        },
       });
     }
 
@@ -363,64 +452,16 @@ export async function runAlertingWorkflow({
   };
 }
 
-export async function runTalentMatchingWorkflow({
-  workspaceId,
-}: WorkflowContext): Promise<WorkflowResult> {
-  const startups = await prisma.startup.findMany({
-    where: { workspaceId },
-  });
-  const lpt = startups.find((startup) => startup.slug === "lpt");
-  if (!lpt) {
-    return { title: "Talent matching", detail: "Startup LPT introuvable." };
-  }
-
-  const nodes = await prisma.ecosystemNode.findMany({
-    where: { workspaceId, type: "startup" },
-  });
-  const lptNode = nodes.find((node) => node.label === lpt.name);
-
-  let matches = 0;
-  for (const startup of startups) {
-    if (startup.id === lpt.id) continue;
-    const overlap = startup.tags.filter((tag) => lpt.tags.includes(tag));
-    const strength = clamp(0.4 + overlap.length * 0.15, 0, 1);
-    const from = lptNode ?? nodes.find((node) => node.label === lpt.name);
-    const to = nodes.find((node) => node.label === startup.name);
-
-    if (!from || !to) continue;
-
-    await prisma.ecosystemEdge.upsert({
-      where: {
-        id: `${from.id}-${to.id}-talent`,
-      },
-      update: {
-        kind: "talent-match",
-        strength,
-      },
-      create: {
-        id: `${from.id}-${to.id}-talent`,
-        workspaceId,
-        fromId: from.id,
-        toId: to.id,
-        kind: "talent-match",
-        strength,
-      },
-    });
-
-    matches += 1;
-  }
-
-  return {
-    title: "Talent matching exécuté",
-    detail: `${matches} matchs créés.`,
-  };
-}
-
 export async function runAutomationExecutionWorkflow({
   workspaceId,
 }: WorkflowContext): Promise<WorkflowResult> {
   const { runScheduler } = await import("@/lib/automations/run");
   const results = await runScheduler();
+  await logAction({
+    workspaceId,
+    type: "workflow.scheduler",
+    payload: { runs: results.length },
+  });
   return {
     title: "Automation execution exécuté",
     detail: `${results.length} workflows exécutés.`,
@@ -438,13 +479,12 @@ export async function executeWorkflowByType(
     case "startup-monitoring":
       return runStartupMonitoringWorkflow(context);
     case "opportunity-detection":
+    case "studio-opportunity":
       return runOpportunityDetectionWorkflow(context);
-    case "content-automation":
-      return runContentAutomationWorkflow(context);
     case "alerting":
       return runAlertingWorkflow(context);
-    case "talent-matching":
-      return runTalentMatchingWorkflow(context);
+    case "cross-intelligence":
+      return runCrossIntelligenceWorkflow(context);
     case "automation-execution":
       return runAutomationExecutionWorkflow(context);
     default:
