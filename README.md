@@ -72,6 +72,7 @@ C’est un **Operating System pour Venture Studio** qui permet de :
 * Workflows personnalisés
 * Triggers intelligents (veille, alertes, briefs)
 * Historique d’exécution
+* Lecture et déclenchement instantané depuis l’interface (boutons “Exécuter” + scans Studio/Cross-intel)
 
 ---
 

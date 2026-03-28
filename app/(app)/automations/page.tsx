@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { TopBar } from "@/components/layout/top-bar";
-import { Badge } from "@/components/ui/badge";
 import { CreateWorkflowButton } from "@/components/automations/create-workflow-button";
+import { ScanControls } from "@/components/automations/scan-controls";
+import { WorkflowRunner } from "@/components/automations/workflow-runner";
 import { apiGet } from "@/lib/api";
 import type { AutomationsResponse } from "@/lib/api-types";
 
@@ -33,48 +34,31 @@ export default async function AutomationsPage() {
             </div>
           </div>
           {workflows.length > 0 ? (
-            <div className="mt-6 space-y-4">
-              {workflows.map((workflow) => (
-                <div
-                  key={workflow.name}
-                  className="border-b border-border/60 pb-4 last:border-b-0 last:pb-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex min-w-0 flex-col">
-                      <Link
-                        href={
-                          workflow.id
-                            ? `/automations/builder/${workflow.id}`
-                            : "#"
-                        }
-                        className="min-w-0 break-words text-sm font-medium text-foreground hover:underline"
-                      >
-                        {workflow.name}
-                      </Link>
-                      {workflow.lastRun ? (
-                        <span className="text-xs text-muted">
-                          Dernière exécution: {workflow.lastRun}
-                        </span>
-                      ) : null}
-                    </div>
-                    <Badge variant="neutral">{workflow.status}</Badge>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted">
-                    <span className="min-w-0 break-words">
-                      Trigger: {workflow.trigger}
-                    </span>
-                    <span className="min-w-0 break-words">
-                      Action: {workflow.action}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-6">
+              <WorkflowRunner workflows={workflows} />
             </div>
           ) : (
             <p className="mt-6 text-sm text-muted">
               Aucun workflow actif. Créez un premier scénario.
             </p>
           )}
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground font-display">
+              Scans & intelligence
+            </h2>
+            <span className="text-xs uppercase tracking-[0.3em] text-muted">
+              Actions manuelles
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            Lancez les scans cross-intelligence et Studio en un clic.
+          </p>
+          <div className="mt-6">
+            <ScanControls />
+          </div>
         </section>
 
         <section className="mt-8 rounded-2xl border border-border/70 bg-surface/70 p-6">
