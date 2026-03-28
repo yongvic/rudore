@@ -1,3 +1,5 @@
+import { defaultAiConfig } from "@/lib/ai-config";
+
 const severityWeight = {
   LOW: 0.35,
   MEDIUM: 0.55,
@@ -17,12 +19,13 @@ function recencyScore(date: Date, windowDays = 14) {
 export function scoreAlert(alert: {
   severity: keyof typeof severityWeight | string;
   createdAt: Date;
-  insight?: { priorityScore?: number | null } | null;
-}) {
+  insight?: { priorityScore?: number | null; type?: string | null } | null;
+}, typeBoosts: Record<string, number> = defaultAiConfig.typeBoosts) {
   const severity = severityWeight[alert.severity as keyof typeof severityWeight] ?? 0.5;
   const priority = alert.insight?.priorityScore ?? 0.5;
+  const boost = alert.insight?.type ? typeBoosts[alert.insight.type] ?? 0 : 0;
   const recency = recencyScore(alert.createdAt);
-  return clamp(severity * 0.5 + priority * 0.3 + recency * 0.2);
+  return clamp(severity * 0.5 + priority * 0.3 + recency * 0.2 + boost);
 }
 
 export function scoreRecommendation(reco: {

@@ -69,8 +69,23 @@ model Workspace {
   ecosystemNodes EcosystemNode[]
   ecosystemEdges EcosystemEdge[]
   aiRuns     AiRun[]
+  aiConfigs  AiConfig[]
 
   @@index([region])
+}
+
+model AiConfig {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
 }
 
 model User {
@@ -204,6 +219,8 @@ model RawDocument {
   title     String?
   content   String
   lang      String
+  tags      String[] @default([])
+  entities  Json?
   hash      String
   createdAt DateTime @default(now())
 
@@ -274,11 +291,48 @@ model AutomationWorkflow {
   trigger     Json
   actions     Json
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  description String?
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  workflowType String?
+  priority     Int      @default(5)
+  maxRetries   Int      @default(1)
+  retryBackoffSeconds Int @default(120)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   runs      WorkflowRun[]
+  triggers  AutomationTrigger[]
+  steps     AutomationAction[]
 
   @@index([workspaceId])
+  @@index([nextRunAt])
+}
+
+model AutomationTrigger {
+  id          String   @id @default(cuid())
+  workflowId  String
+  type        String
+  config      Json
+  order       Int
+  createdAt   DateTime @default(now())
+
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id])
+
+  @@index([workflowId])
+}
+
+model AutomationAction {
+  id          String   @id @default(cuid())
+  workflowId  String
+  type        String
+  config      Json
+  order       Int
+  createdAt   DateTime @default(now())
+
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id])
+
+  @@index([workflowId])
 }
 
 model WorkflowRun {
@@ -287,6 +341,10 @@ model WorkflowRun {
   status     String
   startedAt  DateTime
   finishedAt DateTime?
+  durationMs Int?
+  error      String?
+  triggeredBy String?
+  attempt    Int      @default(1)
   log        Json?
 
   workflow AutomationWorkflow @relation(fields: [workflowId], references: [id])

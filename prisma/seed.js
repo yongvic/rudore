@@ -22,11 +22,74 @@ function score(impact, urgency) {
   };
 }
 
+const defaultAiConfig = {
+  impactKeywords: [
+    "levée",
+    "financement",
+    "régulation",
+    "interdiction",
+    "taxe",
+    "sanction",
+    "fusion",
+    "acquisition",
+    "contrat",
+    "subvention",
+    "croissance",
+    "rupture",
+  ],
+  urgencyKeywords: [
+    "urgent",
+    "immédiat",
+    "bloqué",
+    "crise",
+    "amende",
+    "incident",
+    "pénurie",
+    "risque",
+    "attaque",
+    "suspension",
+    "deadline",
+  ],
+  slowdownKeywords: ["long terme", "progressif", "sur 12 mois", "horizon"],
+  sectorBoosts: {
+    "Commerce intelligent": [
+      "ecommerce",
+      "paiement",
+      "livraison",
+      "retention",
+      "marketplace",
+    ],
+    "Manufacturing rapide": [
+      "usine",
+      "industrie",
+      "capacité",
+      "supply",
+      "production",
+    ],
+    "Santé digitale": ["santé", "clinique", "hôpital", "télémédecine", "patient"],
+    "Productivité RH": [
+      "rh",
+      "paie",
+      "recrutement",
+      "conformité",
+      "talent",
+    ],
+    Logistique: ["logistique", "route", "tracking", "livraison", "hub"],
+  },
+  typeBoosts: {
+    RISK: 0.12,
+    MARKET: 0.08,
+    COMPETITOR: 0.08,
+  },
+};
+
 async function main() {
   const reset = process.env.SEED_RESET === "1";
 
   if (reset) {
     await safeDelete(() => prisma.workflowRun.deleteMany());
+    await safeDelete(() => prisma.automationAction.deleteMany());
+    await safeDelete(() => prisma.automationTrigger.deleteMany());
     await safeDelete(() => prisma.automationWorkflow.deleteMany());
     await safeDelete(() => prisma.alert.deleteMany());
     await safeDelete(() => prisma.recommendation.deleteMany());
@@ -34,6 +97,7 @@ async function main() {
     await safeDelete(() => prisma.rawDocument.deleteMany());
     await safeDelete(() => prisma.scrapeJob.deleteMany());
     await safeDelete(() => prisma.dataSource.deleteMany());
+    await safeDelete(() => prisma.aiConfig.deleteMany());
     await safeDelete(() => prisma.activityEvent.deleteMany());
     await safeDelete(() => prisma.metric.deleteMany());
     await safeDelete(() => prisma.startupMember.deleteMany());
@@ -94,6 +158,14 @@ async function main() {
       { workspaceId: workspace.id, userId: ops.id, role: "ADMIN" },
       { workspaceId: workspace.id, userId: founder.id, role: "VIEWER" },
     ],
+  });
+
+  await prisma.aiConfig.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "default",
+      config: defaultAiConfig,
+    },
   });
 
   const doasi = await prisma.startup.create({
@@ -366,6 +438,8 @@ async function main() {
         content:
           "Des autorités régionales préparent un renforcement des exigences de conformité pour les fintechs.",
         lang: "fr",
+        tags: ["réglementation", "financement"],
+        entities: { countries: ["Côte d'Ivoire", "Ghana"] },
         hash: "allafrica-westafrica-fintech-2026",
       },
     }),
@@ -377,6 +451,8 @@ async function main() {
         content:
           "Un projet de loi pourrait imposer l'usage des domaines nationaux pour les entreprises.",
         lang: "fr",
+        tags: ["réglementation"],
+        entities: { countries: ["Ghana"] },
         hash: "techpoint-ghana-domain-act-2026",
       },
     }),
@@ -388,6 +464,8 @@ async function main() {
         content:
           "Les investissements dans les outils de productivité et les services B2B progressent sur le trimestre.",
         lang: "fr",
+        tags: ["financement", "croissance"],
+        entities: { countries: ["Nigeria", "Sénégal"] },
         hash: "allafrica-business-b2b-2026",
       },
     }),
@@ -398,6 +476,8 @@ async function main() {
         title: "Logistique urbaine",
         content: "Les opérateurs demandent plus de tracking en temps réel.",
         lang: "fr",
+        tags: ["logistique", "industrie"],
+        entities: { countries: ["Bénin"] },
         hash: "rudore-logistics-2026",
       },
     }),
@@ -538,62 +618,243 @@ async function main() {
     ],
   });
 
-  const workflowBrief = await prisma.automationWorkflow.create({
+  const workflowMarket = await prisma.automationWorkflow.create({
     data: {
       workspaceId: workspace.id,
-      name: "Brief hebdo startups",
+      name: "Market intelligence",
       enabled: true,
-      trigger: { label: "Tous les lundis, 07:00", type: "schedule" },
-      actions: { label: "Synthèse + envoi aux leads", type: "email" },
+      trigger: { label: "Tous les matins, 06:30", type: "schedule.daily" },
+      actions: { label: "Scraping + insights", type: "create.insight" },
+      description: "Scraping + analyse IA + génération d'insights.",
+      workflowType: "market-intelligence",
+      priority: 9,
+      maxRetries: 2,
+      retryBackoffSeconds: 120,
+      lastRunAt: new Date("2026-03-27T06:40:00Z"),
     },
   });
 
-  const workflowWatch = await prisma.automationWorkflow.create({
+  const workflowMonitoring = await prisma.automationWorkflow.create({
     data: {
       workspaceId: workspace.id,
-      name: "Veille concurrentielle",
+      name: "Startup monitoring",
       enabled: true,
-      trigger: { label: "Nouveau signal détecté", type: "event" },
-      actions: { label: "Notification + résumé", type: "alert" },
+      trigger: { label: "Lundi 07:30", type: "schedule.weekly" },
+      actions: { label: "Health score + alertes", type: "create.alert" },
+      description: "Score santé + alertes et recommandations.",
+      workflowType: "startup-monitoring",
+      priority: 8,
+      maxRetries: 1,
+      retryBackoffSeconds: 120,
+      lastRunAt: new Date("2026-03-24T07:45:00Z"),
     },
   });
 
-  const workflowAlert = await prisma.automationWorkflow.create({
+  const workflowOpportunity = await prisma.automationWorkflow.create({
     data: {
       workspaceId: workspace.id,
-      name: "Alertes KPI",
-      enabled: false,
-      trigger: { label: "Variation > 15%", type: "threshold" },
-      actions: { label: "Escalade + recommandation", type: "escalation" },
+      name: "Opportunity detection",
+      enabled: true,
+      trigger: { label: "Mardi 08:00", type: "schedule.weekly" },
+      actions: { label: "Détection pattern", type: "create.recommendation" },
+      description: "Analyse globale et suggestion business.",
+      workflowType: "opportunity-detection",
+      priority: 7,
+      maxRetries: 1,
+      retryBackoffSeconds: 120,
     },
+  });
+
+  const workflowContent = await prisma.automationWorkflow.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "Content automation SpeedMaker",
+      enabled: true,
+      trigger: { label: "Mercredi 09:00", type: "schedule.weekly" },
+      actions: { label: "Génération contenu", type: "generate.content" },
+      description: "Génération de contenu marketing pour SpeedMaker.",
+      workflowType: "content-automation",
+      priority: 6,
+      maxRetries: 1,
+      retryBackoffSeconds: 120,
+    },
+  });
+
+  const workflowAlerting = await prisma.automationWorkflow.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "Alerting temps réel",
+      enabled: true,
+      trigger: { label: "Tous les jours 08:30", type: "schedule.daily" },
+      actions: { label: "Notification + escalation", type: "escalate.alert" },
+      description: "Classification et notification des alertes.",
+      workflowType: "alerting",
+      priority: 9,
+      maxRetries: 2,
+      retryBackoffSeconds: 90,
+    },
+  });
+
+  const workflowTalent = await prisma.automationWorkflow.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "Talent matching LPT",
+      enabled: true,
+      trigger: { label: "Vendredi 10:00", type: "schedule.weekly" },
+      actions: { label: "Match talents", type: "match.talent" },
+      description: "Matching LPT ↔ startups.",
+      workflowType: "talent-matching",
+      priority: 5,
+      maxRetries: 1,
+      retryBackoffSeconds: 120,
+    },
+  });
+
+  const workflowExecution = await prisma.automationWorkflow.create({
+    data: {
+      workspaceId: workspace.id,
+      name: "Automation execution",
+      enabled: true,
+      trigger: { label: "Tous les jours 06:00", type: "schedule.daily" },
+      actions: { label: "Exécuter workflows", type: "run.workflows" },
+      description: "Gestion globale des workflows.",
+      workflowType: "automation-execution",
+      priority: 10,
+      maxRetries: 1,
+      retryBackoffSeconds: 60,
+    },
+  });
+
+  await prisma.automationTrigger.createMany({
+    data: [
+      {
+        workflowId: workflowMarket.id,
+        type: "schedule.daily",
+        config: { time: "06:30" },
+        order: 0,
+      },
+      {
+        workflowId: workflowMonitoring.id,
+        type: "schedule.weekly",
+        config: { day: "Lundi", time: "07:30" },
+        order: 0,
+      },
+      {
+        workflowId: workflowOpportunity.id,
+        type: "schedule.weekly",
+        config: { day: "Mardi", time: "08:00" },
+        order: 0,
+      },
+      {
+        workflowId: workflowContent.id,
+        type: "schedule.weekly",
+        config: { day: "Mercredi", time: "09:00" },
+        order: 0,
+      },
+      {
+        workflowId: workflowAlerting.id,
+        type: "schedule.daily",
+        config: { time: "08:30" },
+        order: 0,
+      },
+      {
+        workflowId: workflowTalent.id,
+        type: "schedule.weekly",
+        config: { day: "Vendredi", time: "10:00" },
+        order: 0,
+      },
+      {
+        workflowId: workflowExecution.id,
+        type: "schedule.daily",
+        config: { time: "06:00" },
+        order: 0,
+      },
+    ],
+  });
+
+  await prisma.automationAction.createMany({
+    data: [
+      {
+        workflowId: workflowMarket.id,
+        type: "create.insight",
+        config: { mode: "market-intelligence" },
+        order: 0,
+      },
+      {
+        workflowId: workflowMonitoring.id,
+        type: "create.alert",
+        config: { mode: "health-score" },
+        order: 0,
+      },
+      {
+        workflowId: workflowOpportunity.id,
+        type: "create.recommendation",
+        config: { mode: "opportunity" },
+        order: 0,
+      },
+      {
+        workflowId: workflowContent.id,
+        type: "generate.content",
+        config: { startup: "speedmaker", channel: "LinkedIn" },
+        order: 0,
+      },
+      {
+        workflowId: workflowAlerting.id,
+        type: "escalate.alert",
+        config: { to: "Managing Partner", channel: "Email" },
+        order: 0,
+      },
+      {
+        workflowId: workflowTalent.id,
+        type: "match.talent",
+        config: { focus: "LPT" },
+        order: 0,
+      },
+      {
+        workflowId: workflowExecution.id,
+        type: "run.workflows",
+        config: { scope: "due" },
+        order: 0,
+      },
+    ],
   });
 
   await prisma.workflowRun.createMany({
     data: [
       {
-        workflowId: workflowBrief.id,
+        workflowId: workflowMarket.id,
         status: "SUCCESS",
-        startedAt: new Date("2026-03-27T07:12:00Z"),
-        finishedAt: new Date("2026-03-27T07:13:00Z"),
-        log: { title: "Brief hebdo envoyé", detail: "5 destinataires, 0 erreurs" },
-      },
-      {
-        workflowId: workflowWatch.id,
-        status: "SUCCESS",
-        startedAt: new Date("2026-03-26T18:04:00Z"),
-        finishedAt: new Date("2026-03-26T18:05:00Z"),
+        startedAt: new Date("2026-03-27T06:35:00Z"),
+        finishedAt: new Date("2026-03-27T06:36:10Z"),
+        durationMs: 70000,
+        triggeredBy: "schedule",
         log: {
-          title: "Alerte concurrent SpeedMaker",
-          detail: "Insight classé priorité élevée",
+          title: "Market intelligence",
+          detail: "4 sources analysées, 6 insights générés.",
         },
       },
       {
-        workflowId: workflowAlert.id,
-        status: "RUNNING",
-        startedAt: new Date("2026-03-26T07:00:00Z"),
+        workflowId: workflowMonitoring.id,
+        status: "SUCCESS",
+        startedAt: new Date("2026-03-24T07:40:00Z"),
+        finishedAt: new Date("2026-03-24T07:41:30Z"),
+        durationMs: 90000,
+        triggeredBy: "schedule",
         log: {
-          title: "Synthèse marché générée",
-          detail: "Afrique de l'Ouest, 12 sources",
+          title: "Startup monitoring",
+          detail: "5 startups analysées, 2 alertes.",
+        },
+      },
+      {
+        workflowId: workflowAlerting.id,
+        status: "SUCCESS",
+        startedAt: new Date("2026-03-26T09:00:00Z"),
+        finishedAt: new Date("2026-03-26T09:00:30Z"),
+        durationMs: 30000,
+        triggeredBy: "event",
+        log: {
+          title: "Alerting",
+          detail: "3 alertes notifiées.",
         },
       },
     ],
