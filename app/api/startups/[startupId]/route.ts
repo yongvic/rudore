@@ -43,12 +43,18 @@ export async function GET(
     take: 4,
   });
 
+  type StartupAlertRow = (typeof startup.alerts)[number];
+  type StartupRecoRow = (typeof startup.recos)[number];
+  type StartupInsightRow = (typeof startup.insights)[number];
+  type StartupSignalRow = (typeof synergies)[number];
+  type StartupTaskRow = (typeof startup.tasks)[number];
+
   return Response.json({
     name: startup.name,
     sector: startup.sector,
     stage: startup.stage,
     description: startup.description ?? "Aucune description fournie.",
-    alerts: startup.alerts.map((alert) => {
+    alerts: startup.alerts.map((alert: StartupAlertRow) => {
       const mapping =
         alertTone[alert.severity as keyof typeof alertTone] ?? alertTone.MEDIUM;
       return {
@@ -58,21 +64,21 @@ export async function GET(
         label: mapping.label,
       };
     }),
-    recommendations: startup.recos.map((reco) => ({
+    recommendations: startup.recos.map((reco: StartupRecoRow) => ({
       title: reco.title,
       detail: reco.action,
     })),
-    intelligence: startup.insights.map((insight) => ({
+    intelligence: startup.insights.map((insight: StartupInsightRow) => ({
       title: insight.title,
       detail: insight.summary,
       tag: insightTags[insight.type as keyof typeof insightTags] ?? "Signal",
     })),
-    synergies: synergies.map((signal) => ({
+    synergies: synergies.map((signal: StartupSignalRow) => ({
       title: signal.title,
       detail: signal.summary,
       tags: signal.tags ?? [],
     })),
-    tasks: startup.tasks.map((task) => ({
+    tasks: startup.tasks.map((task: StartupTaskRow) => ({
       id: task.id,
       title: task.title,
       detail: task.detail,

@@ -25,11 +25,12 @@ export async function GET(request: NextRequest) {
   );
 
   const normalizedStartup = startupSlug?.toLowerCase();
+  const slugFilter = startupSlug ?? undefined;
   const startup =
     normalizedStartup && normalizedStartup !== "studio"
-      ? await prisma.startup.findFirst({
-          where: { workspaceId: workspace.id, slug: startupSlug },
-        })
+    ? await prisma.startup.findFirst({
+        where: { workspaceId: workspace.id, slug: slugFilter },
+      })
       : null;
 
   const where = {
@@ -51,9 +52,10 @@ export async function GET(request: NextRequest) {
   ]);
 
   const hasMore = page * pageSize < total;
+  type ActionLogRow = (typeof logs)[number];
 
   return Response.json({
-    logs: logs.map((log) => ({
+    logs: logs.map((log: ActionLogRow) => ({
       id: log.id,
       type: log.type,
       payload: (log.payload as Record<string, unknown>) ?? {},

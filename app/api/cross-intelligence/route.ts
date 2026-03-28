@@ -20,12 +20,15 @@ export async function GET() {
     select: { slug: true, name: true },
   });
 
-  const nameBySlug = new Map(startups.map((item) => [item.slug, item.name]));
+  const nameBySlug = new Map(
+    startups.map((item: { slug: string; name: string }) => [item.slug, item.name])
+  );
 
-  const items = signals.map((signal) => ({
+  type SignalRow = (typeof signals)[number];
+  const items = signals.map((signal: SignalRow) => ({
     title: signal.title,
     summary: signal.summary,
-    startups: signal.startupSlugs.map((slug) => nameBySlug.get(slug) ?? slug),
+    startups: signal.startupSlugs.map((slug: string) => nameBySlug.get(slug) ?? slug),
     impactScore: Math.round(signal.impactScore),
     confidenceScore: Math.round(signal.confidenceScore),
     tags: signal.tags ?? [],

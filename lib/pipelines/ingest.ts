@@ -15,7 +15,7 @@ type IngestInput = {
 
 const insightTypeBySource: Record<
   string,
-  "MARKET" | "COMPETITOR" | "TREND" | "OPPORTUNITY"
+  "MARKET" | "COMPETITOR" | "TREND" | "OPPORTUNITY" | "RISK"
 > = {
   Regulatory: "MARKET",
   Media: "COMPETITOR",
@@ -208,7 +208,13 @@ export async function runIngestion(input: IngestInput = {}) {
     orderBy: { createdAt: "asc" },
   });
 
-  const workspaceIds = [...new Set(sources.map((source) => source.workspaceId))];
+  type SourceRow = (typeof sources)[number];
+  const workspaceIdCandidates: string[] = sources
+    .map((source: SourceRow) => source.workspaceId)
+    .filter((value: string | null | undefined): value is string =>
+      Boolean(value)
+    );
+  const workspaceIds: string[] = [...new Set(workspaceIdCandidates)];
   const aiConfigs = await getWorkspaceAiConfigs(workspaceIds);
 
   const startups = await prisma.startup.findMany({
@@ -217,14 +223,15 @@ export async function runIngestion(input: IngestInput = {}) {
     select: { id: true, name: true, slug: true, sector: true, tags: true },
   });
 
+  type StartupRow = (typeof startups)[number];
   const selectedStartup =
     input.startupSlug
-      ? startups.find((startup) => startup.slug === input.startupSlug)
+      ? startups.find((startup: StartupRow) => startup.slug === input.startupSlug)
       : undefined;
   const fallbackStartupId =
     input.startupId ?? selectedStartup?.id ?? startups[0]?.id ?? null;
   const targetStartup =
-    startups.find((startup) => startup.id === fallbackStartupId) ??
+    startups.find((startup: StartupRow) => startup.id === fallbackStartupId) ??
     selectedStartup;
   const results = {
     sources: sources.length,

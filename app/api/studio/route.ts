@@ -15,8 +15,9 @@ export async function GET() {
     take: 12,
   });
 
+  type BlueprintRow = (typeof blueprints)[number];
   return Response.json({
-    blueprints: blueprints.map((item) => ({
+    blueprints: blueprints.map((item: BlueprintRow) => ({
       title: item.title,
       problem: item.problem,
       solution: item.solution,

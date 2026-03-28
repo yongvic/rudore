@@ -25,7 +25,8 @@ export async function GET() {
     },
   });
 
-  const feed = insights.map((insight) => {
+  type InsightRow = (typeof insights)[number];
+  const feed = insights.map((insight: InsightRow) => {
     const impact = insight.impactScore ?? insight.confidenceScore;
     const urgency = insight.urgencyScore ?? insight.confidenceScore;
     const priority = insight.priorityScore ?? insight.confidenceScore;
@@ -40,9 +41,10 @@ export async function GET() {
     };
   });
 
+  type StartupFilterRow = (typeof startups)[number];
   const filters = [
     { label: "Toutes", active: true },
-    ...startups.map((startup) => ({ label: startup.name })),
+    ...startups.map((startup: StartupFilterRow) => ({ label: startup.name })),
   ];
 
   return Response.json({ feed, filters });

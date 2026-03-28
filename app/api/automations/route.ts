@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { formatRelativeTime } from "@/lib/formatters";
 import {
@@ -28,7 +29,8 @@ export async function GET() {
     take: 8,
   });
 
-  const workflowItems = workflows.map((workflow) => {
+  type WorkflowRow = (typeof workflows)[number];
+  const workflowItems = workflows.map((workflow: WorkflowRow) => {
     const triggerType = workflow.triggers[0]?.type ?? (workflow.trigger as { type?: string })?.type ?? "—";
     const actionType = workflow.steps[0]?.type ?? (workflow.actions as { type?: string })?.type ?? "—";
     return {
@@ -44,7 +46,8 @@ export async function GET() {
     };
   });
 
-  const historyItems = history.map((run) => ({
+  type RunRow = (typeof history)[number];
+  const historyItems = history.map((run: RunRow) => ({
     id: run.id,
     title: (run.log as { title?: string })?.title ?? "Exécution",
     detail:
@@ -101,25 +104,25 @@ export async function POST(request: Request) {
   const defaultAction = actionRegistry[0];
 
   if (defaultTrigger) {
-    await prisma.automationTrigger.create({
-      data: {
-        workflowId: workflow.id,
-        type: defaultTrigger.type,
-        config: defaultTrigger.defaultConfig,
-        order: 0,
-      },
-    });
+      await prisma.automationTrigger.create({
+        data: {
+          workflowId: workflow.id,
+          type: defaultTrigger.type,
+          config: defaultTrigger.defaultConfig as Prisma.InputJsonValue,
+          order: 0,
+        },
+      });
   }
 
   if (defaultAction) {
-    await prisma.automationAction.create({
-      data: {
-        workflowId: workflow.id,
-        type: defaultAction.type,
-        config: defaultAction.defaultConfig,
-        order: 0,
-      },
-    });
+      await prisma.automationAction.create({
+        data: {
+          workflowId: workflow.id,
+          type: defaultAction.type,
+          config: defaultAction.defaultConfig as Prisma.InputJsonValue,
+          order: 0,
+        },
+      });
   }
 
   return Response.json({ id: workflow.id });

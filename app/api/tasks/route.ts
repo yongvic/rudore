@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import type { TaskPriority, TaskStatus } from "@/lib/api-types";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { logAction } from "@/lib/action-log";
@@ -28,14 +29,14 @@ export async function GET(request: NextRequest) {
   const priorityParam = request.nextUrl.searchParams.get("priority");
   const pageParam = request.nextUrl.searchParams.get("page");
   const pageSizeParam = request.nextUrl.searchParams.get("pageSize");
-  const status =
+  const status: TaskStatus | null =
     statusParam === "OPEN" ||
     statusParam === "IN_PROGRESS" ||
     statusParam === "BLOCKED" ||
     statusParam === "DONE"
       ? statusParam
       : null;
-  const priority =
+  const priority: TaskPriority | null =
     priorityParam === "LOW" ||
     priorityParam === "MEDIUM" ||
     priorityParam === "HIGH" ||
@@ -49,11 +50,12 @@ export async function GET(request: NextRequest) {
   );
 
   const normalizedStartup = startupSlug?.toLowerCase();
+  const slugFilter = startupSlug ?? undefined;
   const startup =
     normalizedStartup && normalizedStartup !== "studio"
-      ? await prisma.startup.findFirst({
-          where: { workspaceId: workspace.id, slug: startupSlug },
-        })
+        ? await prisma.startup.findFirst({
+            where: { workspaceId: workspace.id, slug: slugFilter },
+          })
       : null;
 
   const where = {
@@ -77,8 +79,9 @@ export async function GET(request: NextRequest) {
 
   const hasMore = page * pageSize < total;
 
+  type TaskRow = (typeof tasks)[number];
   return Response.json({
-    tasks: tasks.map((task) => ({
+    tasks: tasks.map((task: TaskRow) => ({
       id: task.id,
       title: task.title,
       detail: task.detail,

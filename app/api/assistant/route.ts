@@ -17,10 +17,13 @@ export async function GET() {
   const context = [
     {
       label: "Startups liées",
-      value:
-        startups.length > 0
-          ? startups.slice(0, 2).map((item) => item.name).join(", ")
-          : "Aucune startup liée",
+    value:
+      startups.length > 0
+        ? startups
+            .slice(0, 2)
+            .map((item: { name: string }) => item.name)
+            .join(", ")
+        : "Aucune startup liée",
     },
     {
       label: "Sources actives",

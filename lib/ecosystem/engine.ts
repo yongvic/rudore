@@ -103,8 +103,9 @@ export async function buildEcosystemSnapshot(workspaceId?: string | null) {
     select: { name: true, tags: true, sector: true },
   });
 
-  const startupMeta = new Map(
-    startups.map((startup) => [
+  type StartupMetaRow = (typeof startups)[number];
+  const startupMeta = new Map<string, { tags?: string[] | null; sector?: string | null }>(
+    startups.map((startup: StartupMetaRow) => [
       startup.name.toLowerCase(),
       { tags: startup.tags, sector: startup.sector },
     ])
@@ -121,7 +122,8 @@ export async function buildEcosystemSnapshot(workspaceId?: string | null) {
     orderBy: { createdAt: "asc" },
   });
 
-  const nodeItems: EcosystemNode[] = nodes.map((node, index) => {
+  type EcosystemNodeRow = (typeof nodes)[number];
+  const nodeItems: EcosystemNode[] = nodes.map((node: EcosystemNodeRow, index: number) => {
     const meta = (node.meta as {
       x?: string;
       y?: string;
@@ -133,17 +135,20 @@ export async function buildEcosystemSnapshot(workspaceId?: string | null) {
     const fallbackX = `${50 + 32 * Math.cos(angle)}%`;
     const fallbackY = `${50 + 32 * Math.sin(angle)}%`;
 
+    const sectorValue = meta.sector ?? fallback?.sector ?? undefined;
+    const tagsValue = meta.tags ?? fallback?.tags ?? undefined;
     return {
       id: node.id,
       label: node.label,
       x: meta.x ?? fallbackX,
       y: meta.y ?? fallbackY,
-      sector: meta.sector ?? fallback?.sector,
-      tags: meta.tags ?? fallback?.tags,
+      sector: sectorValue,
+      tags: tagsValue,
     };
   });
 
-  const relationItems: EcosystemRelation[] = edges.map((edge) => ({
+  type EcosystemEdgeRow = (typeof edges)[number];
+  const relationItems: EcosystemRelation[] = edges.map((edge: EcosystemEdgeRow) => ({
     id: edge.id,
     title: `${edge.from.label} ↔ ${edge.to.label}`,
     detail: `Synergie ${edge.kind} à activer.`,

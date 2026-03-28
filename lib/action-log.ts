@@ -1,10 +1,11 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 type ActionLogInput = {
   workspaceId: string;
   startupId?: string | null;
   type: string;
-  payload: Record<string, unknown>;
+  payload: Prisma.InputJsonValue;
 };
 
 export async function logAction({
@@ -19,7 +20,7 @@ export async function logAction({
         workspaceId,
         startupId: startupId ?? null,
         type,
-        payload,
+        payload: payload as Prisma.InputJsonValue,
       },
     });
   } catch {

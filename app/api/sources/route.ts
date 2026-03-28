@@ -24,8 +24,9 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
+  type SourceRow = (typeof sources)[number];
   return Response.json({
-    sources: sources.map((source) => ({
+    sources: sources.map((source: SourceRow) => ({
       id: source.id,
       name: source.name,
       url: source.url,

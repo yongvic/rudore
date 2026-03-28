@@ -209,6 +209,7 @@ export async function runOpportunityDetectionWorkflow({
     orderBy: { priorityScore: "desc" },
     take: 10,
   });
+  type InsightRow = (typeof insights)[number];
 
   const headline = insights[0]?.title ?? "Opportunité émergente";
   const summary =
@@ -272,7 +273,7 @@ export async function runOpportunityDetectionWorkflow({
         targetMarket: "Venture studios, fintechs, plateformes impact en Afrique.",
         validationSignals: [headline, "Signaux convergents sur 14 jours"],
         riskFactors: ["Dépendance aux sources externes", "Cycles réglementaires"],
-        relatedInsights: insights.slice(0, 4).map((item) => item.id),
+        relatedInsights: insights.slice(0, 4).map((item: InsightRow) => item.id),
         impactScore: clamp(baseImpact),
         confidenceScore: clamp(baseConfidence),
       },

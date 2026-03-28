@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { getActionLabel, getTriggerLabel } from "@/lib/automations/registry";
@@ -20,7 +21,7 @@ const workflowSchema = z.object({
       z.object({
         id: z.string().optional(),
         type: z.string(),
-        config: z.record(z.any()).optional().default({}),
+        config: z.record(z.any(), z.string()).optional(),
         order: z.number().int().nonnegative(),
       })
     )
@@ -30,7 +31,7 @@ const workflowSchema = z.object({
       z.object({
         id: z.string().optional(),
         type: z.string(),
-        config: z.record(z.any()).optional().default({}),
+        config: z.record(z.any(), z.string()).optional(),
         order: z.number().int().nonnegative(),
       })
     )
@@ -54,6 +55,9 @@ export async function GET(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
+  type TriggerRow = (typeof workflow.triggers)[number];
+  type StepRow = (typeof workflow.steps)[number];
+
   return Response.json({
     id: workflow.id,
     name: workflow.name,
@@ -65,14 +69,14 @@ export async function GET(
     priority: workflow.priority,
     maxRetries: workflow.maxRetries,
     retryBackoffSeconds: workflow.retryBackoffSeconds,
-    triggers: workflow.triggers.map((trigger) => ({
+    triggers: workflow.triggers.map((trigger: TriggerRow) => ({
       id: trigger.id,
       type: trigger.type,
       config: trigger.config as Record<string, unknown>,
       order: trigger.order,
       label: getTriggerLabel(trigger.type),
     })),
-    actions: workflow.steps.map((action) => ({
+    actions: workflow.steps.map((action: StepRow) => ({
       id: action.id,
       type: action.type,
       config: action.config as Record<string, unknown>,
@@ -121,7 +125,7 @@ export async function PUT(
         ? computeNextDailyRun(scheduleTrigger.config as { time?: string })
       : null;
 
-  const updated = await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const workflow = await tx.automationWorkflow.update({
       where: { id: workflowId },
       data: {

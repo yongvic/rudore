@@ -21,6 +21,7 @@ const insightTags = {
   OPPORTUNITY: "Opportunité",
 };
 
+type SeverityRankKey = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 const severityRank = {
   LOW: 1,
   MEDIUM: 2,
@@ -77,8 +78,10 @@ export async function GET() {
 
   const aiConfig = await getWorkspaceAiConfig(startups[0]?.workspaceId ?? null);
 
-  const alertItems = alerts
-    .map((alert) => ({ alert, score: scoreAlert(alert, aiConfig.typeBoosts) }))
+  type AlertRow = (typeof alerts)[number];
+  type AlertItemRow = { alert: AlertRow; score: number };
+  const alertItems = (alerts
+    .map((alert: AlertRow) => ({ alert, score: scoreAlert(alert, aiConfig.typeBoosts) })) as AlertItemRow[])
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map(({ alert }) => {
@@ -98,16 +101,17 @@ export async function GET() {
     take: 3,
   });
 
-  const insightItems = insights.map((insight) => ({
+  type InsightRow = (typeof insights)[number];
+  const insightItems = insights.map((insight: InsightRow) => ({
     title: insight.title,
     summary: insight.summary,
     confidence: formatConfidence(insight.confidenceScore),
   }));
 
-  const watchlist = startups.slice(0, 3).map((startup) => {
-    const highest = startup.alerts.reduce<
-      "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null
-    >((current, alert) => {
+  type StartupRow = (typeof startups)[number];
+  const watchlist = startups.slice(0, 3).map((startup: StartupRow) => {
+    const highest = startup.alerts.reduce(
+      (current: SeverityRankKey | null, alert: { severity: SeverityRankKey }) => {
       if (!current) return alert.severity;
       return severityRank[alert.severity] > severityRank[current]
         ? alert.severity
@@ -132,7 +136,8 @@ export async function GET() {
     take: 3,
   });
 
-  const marketItems = marketSignals.map((signal) => ({
+  type MarketSignalRow = (typeof marketSignals)[number];
+  const marketItems = marketSignals.map((signal: MarketSignalRow) => ({
     title: signal.title,
     summary: signal.summary,
     tag: insightTags[signal.type as keyof typeof insightTags] ?? "Signal",
@@ -143,7 +148,8 @@ export async function GET() {
     take: 3,
   });
 
-  const execution = workflowRuns.map((run) => ({
+  type WorkflowRunRow = (typeof workflowRuns)[number];
+  const execution = workflowRuns.map((run: WorkflowRunRow) => ({
     title: (run.log as { title?: string })?.title ?? "Automatisation",
     detail:
       (run.log as { detail?: string })?.detail ??
@@ -169,6 +175,7 @@ export async function GET() {
     take: 4,
   });
 
+  type TaskRow = (typeof tasks)[number];
   return Response.json({
     kpis,
     alerts: alertItems,
@@ -176,7 +183,7 @@ export async function GET() {
     watchlist,
     marketSignals: marketItems,
     execution,
-    tasks: tasks.map((task) => ({
+    tasks: tasks.map((task: TaskRow) => ({
       id: task.id,
       title: task.title,
       detail: task.detail,

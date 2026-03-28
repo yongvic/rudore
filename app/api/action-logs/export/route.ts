@@ -27,10 +27,11 @@ export async function GET(request: NextRequest) {
   );
 
   const normalizedStartup = startupSlug?.toLowerCase();
+  const slugFilter = startupSlug ?? undefined;
   const startup =
     normalizedStartup && normalizedStartup !== "studio"
       ? await prisma.startup.findFirst({
-          where: { workspaceId: workspace.id, slug: startupSlug },
+          where: { workspaceId: workspace.id, slug: slugFilter },
         })
       : null;
 
@@ -46,6 +47,8 @@ export async function GET(request: NextRequest) {
     take: limit,
   });
 
+  type ExportActionLog = (typeof logs)[number];
+
   const payload = {
     exportedAt: new Date().toISOString(),
     count: logs.length,
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
       type,
       limit,
     },
-    logs: logs.map((log) => ({
+    logs: logs.map((log: ExportActionLog) => ({
       id: log.id,
       type: log.type,
       payload: (log.payload as Record<string, unknown>) ?? {},

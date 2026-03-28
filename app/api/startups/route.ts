@@ -43,7 +43,8 @@ export async function GET() {
     },
   });
 
-  const data = startups.map((startup) => ({
+  type StartupRow = (typeof startups)[number];
+  const data = startups.map((startup: StartupRow) => ({
     id: startup.slug,
     name: startup.name,
     sector: startup.sector,

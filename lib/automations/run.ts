@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getTriggerLabel } from "@/lib/automations/registry";
 import {
@@ -38,7 +39,7 @@ export async function runWorkflow(
       startedAt,
       triggeredBy,
       attempt: 1,
-      log: {
+        log: {
         title: `Exécution ${workflow.name}`,
         detail: `Déclenché par ${getTriggerLabel(
           workflow.triggers[0]?.type ?? "manual"
@@ -72,12 +73,13 @@ export async function runWorkflow(
           log: {
             title: result.title,
             detail: result.detail,
-            meta: result.meta ?? null,
+          meta: (result.meta ?? null) as Prisma.InputJsonValue,
           },
         },
       });
 
-      const scheduleTrigger = workflow.triggers.find((trigger) =>
+      type WorkflowTriggerRow = (typeof workflow.triggers)[number];
+      const scheduleTrigger = workflow.triggers.find((trigger: WorkflowTriggerRow) =>
         trigger.type.startsWith("schedule")
       );
       const nextRunAt =
